@@ -400,22 +400,40 @@ namespace DriverUpdater
         }
 
         /// <summary>Downloads a catalog driver and installs it with pnputil. Returns (ok, message, rebootNeeded).</summary>
-        public static Tuple<bool, string, bool> Install(string guid, string name, Action<string> status)
+        /// <summary>Downloads and unpacks a catalog driver ahead of installing. Returns the folder with the INF files.</summary>
+        public static string Prefetch(string guid, string name, Action<string> status)
         {
-            status("Downloading: " + name);
-            var urls = DownloadUrls(guid);
-            if (urls.Count == 0) return Tuple.Create(false, "No download link found", false);
             string dir = Path.Combine(Paths.WorkDir, guid);
-            string extract = Path.Combine(dir, "extracted");
+            string extract = Path.Combine(dir, "extracted"), done = Path.Combine(dir, ".done");
+            if (File.Exists(done)) return extract;
+            status("Downloading: " + name);
+            List<string> urls = null;
+            for (int attempt = 1; urls == null; attempt++)
+            {
+                try { urls = DownloadUrls(guid); }
+                catch (WebException) { if (attempt >= 3) throw; Net.WaitForInternet(60, status); }
+            }
+            if (urls.Count == 0) throw new InvalidOperationException("No download link found");
             if (Directory.Exists(dir)) Directory.Delete(dir, true);
             Directory.CreateDirectory(extract);
             foreach (var u in urls)
             {
                 string file = Path.Combine(dir, Path.GetFileName(new Uri(u).AbsolutePath));
-                using (var wc = NewClient()) wc.DownloadFile(u, file);
+                for (int attempt = 1; ; attempt++)
+                {
+                    try { using (var wc = NewClient()) wc.DownloadFile(u, file); break; }
+                    catch (WebException ex) { if (attempt >= 3) throw; Log.Write("Download problem: " + ex.Message); Net.WaitForInternet(60, status); }
+                }
                 if (file.EndsWith(".cab", StringComparison.OrdinalIgnoreCase))
                     Sys.Run(Sys.SystemTool("expand.exe"), "-F:* \"" + file + "\" \"" + extract + "\"");
             }
+            File.WriteAllText(done, "ok");
+            return extract;
+        }
+
+        public static Tuple<bool, string, bool> Install(string guid, string name, Action<string> status)
+        {
+            string extract = Prefetch(guid, name, status);
             status("Installing: " + name);
             int code = Sys.Run(Sys.SystemTool("pnputil.exe"), "/add-driver \"" + Path.Combine(extract, "*.inf") + "\" /subdirs /install");
             switch (code)
@@ -478,6 +496,26 @@ namespace DriverUpdater
                 }
                 catch { }
             }
+        }
+    }
+
+    public static class Net
+    {
+        /// <summary>Waits (up to maxSeconds) until the internet answers again - e.g. after a network driver reset.</summary>
+        public static bool WaitForInternet(int maxSeconds, Action<string> status)
+        {
+            for (int s = 0; s < maxSeconds; s += 3)
+            {
+                status("Waiting for the internet connection to come back... (" + s + " s)");
+                try
+                {
+                    Dns.GetHostEntry("www.catalog.update.microsoft.com");
+                    Thread.Sleep(2000);          // give the adapter a moment to settle
+                    return true;
+                }
+                catch { Thread.Sleep(3000); }
+            }
+            return false;
         }
     }
 

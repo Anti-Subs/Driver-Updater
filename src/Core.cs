@@ -32,6 +32,7 @@ namespace DriverUpdater
             if (r.Kind != "Update" || string.IsNullOrEmpty(r.Latest)) return;
             string k;
             bool declined = kept != null && kept.TryGetValue(r.Key, out k) && k == r.Latest;
+            if (kept != null && kept.TryGetValue(r.Key, out k) && k == "x:" + r.Latest) { r.Kind = "NotFor"; return; }
             var lv = Util.ParseVersion(r.Latest);
             bool inStore = storeVersions != null && lv != null && storeVersions.Contains(lv.ToString());
             if (declined || inStore) r.Kind = "Kept";
@@ -315,6 +316,10 @@ namespace DriverUpdater
                     if (hint.Length > 0) { Size = "Newer builds: " + hint; ButtonText = "Maker's tool"; ButtonTag = "Maker"; ButtonVisibility = "Visible"; }
                     break;
                 case "Unknown": SetTag("Not checked - Microsoft busy", "#FEF3C7", "#B45309"); break;
+                case "NotFor":
+                    SetTag("Up to date", "#DCFCE7", "#15803D");
+                    if (r != null) Size = r.Source + "'s " + r.Latest + " package doesn't support this device";
+                    break;
                 case "Kept":
                     SetTag("Up to date - Windows prefers this version", "#DCFCE7", "#15803D");
                     if (r != null && !string.IsNullOrEmpty(r.Latest)) Size = "Version " + r.Latest + " was offered, but Windows keeps the current one as the better match";
@@ -396,7 +401,7 @@ namespace DriverUpdater
 
         static int Rank(string kind)
         {
-            switch (kind) { case "Update": return 4; case "Ok": case "Kept": return 3; case "Vendor": return 2; case "Unknown": return 1; default: return 0; }
+            switch (kind) { case "Update": return 4; case "Ok": case "Kept": case "NotFor": return 3; case "Vendor": return 2; case "Unknown": return 1; default: return 0; }
         }
 
         /// <summary>True when result b should replace result a for the same driver (checks run in parallel).</summary>
