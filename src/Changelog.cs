@@ -1,0 +1,78 @@
+// Driver Updater - change log shown on the About page (newest first)
+using System.Collections.Generic;
+using System.Linq;
+
+namespace DriverUpdater
+{
+    public class ChangeEntry
+    {
+        public string Version { get; set; }
+        public string Date { get; set; }
+        public string Notes { get; set; }       // one change per line, shown as bullets
+        public string Badge { get; set; }       // "Installed" on the running version
+        public string BadgeVisibility { get; set; }
+    }
+
+    public static class Changelog
+    {
+        static readonly string[][] Raw =
+        {
+            new[] { "3.4.1", "22 Oct 2026", "About page now shows this change log" },
+            new[] { "3.4.0", "22 Oct 2026",
+                "Drivers that came with Windows (like the built-in keyboard) are no longer listed - Windows keeps them updated",
+                "NVIDIA HD Audio and Platform Controllers are confirmed together with the NVIDIA graphics driver",
+                "ASUS packages with their own version numbers are checked by reading the real driver version inside",
+                "Updates that Windows declines to use show as 'Windows prefers this version' instead of popping up every scan",
+                "Drivers still waiting after a restart are recognised as kept by Windows" },
+            new[] { "3.3.1", "22 Oct 2026",
+                "Intel graphics, Wi-Fi and NPU drivers install silently, without Intel's extra apps",
+                "Manufacturer installers run one at a time, and each result is checked against the installed driver version",
+                "Header no longer says 'all up to date' while updates are still pending" },
+            new[] { "3.3.0", "22 Oct 2026",
+                "ASUS, NVIDIA and Intel sites now confirm drivers are up to date, not just find updates",
+                "Fixed the Intel check (Intel's feed is a zip file)",
+                "Much faster scans: no long waits when Microsoft's catalog pushes back",
+                "The log lists each driver's result and where it came from" },
+            new[] { "3.2.1", "22 Oct 2026",
+                "Every scan re-reads installed drivers, so updates made elsewhere are seen",
+                "NVIDIA updates install the driver only, silently - no NVIDIA app" },
+            new[] { "3.2.0", "22 Oct 2026",
+                "Windows Update, manufacturer and catalog checks run at the same time",
+                "Faster start-up; window fits small and high-scaling screens",
+                "Removed the blue arrow from the sidebar; better support for other PCs (desktops, ARM, ASUS desktop boards)" },
+            new[] { "3.1.0", "22 Oct 2026",
+                "New sources: ASUS (MyASUS service), NVIDIA and Intel official driver lookups",
+                "Downloads only from official sites; installers must pass a Windows signature check" },
+            new[] { "3.0.1", "22 Oct 2026", "Fixed a start-up error in the new native version" },
+            new[] { "3.0.0", "22 Oct 2026",
+                "Rebuilt as a native Windows app (no PowerShell), about 250 KB",
+                "The same file installs, runs and uninstalls the app" },
+            new[] { "2.2.1", "22 Oct 2026", "Last scan kept through app updates and for every account on the PC" },
+            new[] { "2.2.0", "22 Oct 2026",
+                "Remembers your last scan and shows when it ran",
+                "Shows which drivers need a restart to finish" },
+            new[] { "2.1.1", "22 Oct 2026", "Setup explains when Windows blocks the app (Smart App Control)" },
+            new[] { "2.1.0", "22 Oct 2026",
+                "Single page: all drivers always visible; updates move to the top while scanning",
+                "Version number in the installer's file name and file properties" },
+            new[] { "2.0.0", "22 Oct 2026",
+                "Modern design with sidebar, driver cards and per-driver Update buttons",
+                "Proper installer, Start-menu entry and uninstaller",
+                "Handles Microsoft catalog rate limits; restore points can no longer hang" },
+            new[] { "1.0", "22 Oct 2026",
+                "First version: scans drivers, checks Windows Update and the Microsoft Update Catalog, installs with a restore point" },
+        };
+
+        public static List<ChangeEntry> Entries(string runningVersion)
+        {
+            return Raw.Select(r => new ChangeEntry
+            {
+                Version = "Version " + r[0],
+                Date = r[1],
+                Notes = string.Join("\n", r.Skip(2).Select(n => "•  " + n)),
+                Badge = "This version",
+                BadgeVisibility = r[0] == runningVersion ? "Visible" : "Collapsed"
+            }).ToList();
+        }
+    }
+}
