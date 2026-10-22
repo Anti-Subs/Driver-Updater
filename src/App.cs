@@ -376,7 +376,7 @@ namespace DriverUpdater
         void UpdateHeader()
         {
             int nUpd = list.Count("Update", "Queued", "Installing", "Opened");
-            int nOk = list.Count("Ok", "Installed", "Kept");
+            int nOk = list.Count("Ok", "Installed", "Kept", "NotFor");
             int nMk = list.Count("Vendor");
             int nUnk = list.Count("Unknown");
             int total = list.Rows.Count;
@@ -709,11 +709,35 @@ namespace DriverUpdater
                 }
                 int step = 1;
                 Post(() => Progress(E("InstallProgress"), 1, targets.Count + 1, false));
+
+                // Network adapters last: reinstalling one briefly drops the connection
+                jobs = jobs.OrderBy(j => string.Equals(j.Class, "NET", StringComparison.OrdinalIgnoreCase) ? 1 : 0).ToList();
+                // Download everything first, so a connection drop during an install can't break the others
+                var prefetchErrors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var j in jobs.Where(x => x.Source != "Windows Update"))
+                {
+                    var pj = j;
+                    try
+                    {
+                        Action<string> say = msg => Post(() => Footer(msg));
+                        if (pj.Source == "Microsoft Update Catalog") CatalogClient.Prefetch(pj.Ref, pj.Name, say);
+                        else VendorNet.Prefetch(pj, say);
+                    }
+                    catch (Exception ex) { prefetchErrors[pj.Key] = ex.Message; Log.Write("Download failed for " + pj.Name + ": " + ex.Message); }
+                }
                 foreach (var j in jobs)
                 {
                     var job = j;
                     Post(() => { DriverItem it; if (list.ByKey.TryGetValue(job.Key, out it)) it.ApplyState("Installing", job, true); });
                     InstallOutcome res;
+                    string preErr;
+                    if (prefetchErrors.TryGetValue(job.Key, out preErr))
+                    {
+                        results[job.Key] = InstallOutcome.Of(false, "Download failed: " + preErr);
+                        step++; int sx = step;
+                        Post(() => Progress(E("InstallProgress"), sx, targets.Count + 1, false));
+                        continue;
+                    }
                     try
                     {
                         Action<string> say = msg => Post(() => Footer(msg));
@@ -786,6 +810,12 @@ namespace DriverUpdater
                     if (r.Reboot) { d.Kind = "Installed"; needRestart.Add(t); }
                     else { d.Kind = "Ok"; d.Installed = d.Latest; t.Installed = d.Latest; }
                     t.ApplyState("Installed", d, false);
+                }
+                else if (r != null && r.NotForDevice)
+                {
+                    KeptStore.Add(t.Key, "x:" + d.Latest);
+                    d.Kind = "NotFor";
+                    t.ApplyState("NotFor", d, false);
                 }
                 else if (r != null && r.Kept)
                 {

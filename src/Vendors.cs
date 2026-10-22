@@ -360,7 +360,13 @@ namespace DriverUpdater
             {
                 var rx = PatternFor(d);
                 if (rx == null) continue;
-                foreach (var p in pk.Where(p => rx.IsMatch(p.Title))) if (!VendorMatch.Offer(best, d, p)) VendorMatch.Confirm(best, d, p);
+                var candidates = pk.Where(p => rx.IsMatch(p.Title)).ToList();
+                // Intel ships several graphics series with the same major version (e.g. 101.7xxx for older chips,
+                // 101.9xxx for Arc / Core Ultra), so offer the closest newer build, not simply the highest one.
+                var newer = candidates.Where(p => Util.IsNewerSameFamily(p.Version, d.Version))
+                                      .OrderBy(p => Util.ParseVersion(p.Version)).FirstOrDefault();
+                if (newer != null) VendorMatch.Offer(best, d, newer);
+                else foreach (var p in candidates) VendorMatch.Confirm(best, d, p);
             }
             return best;
         }

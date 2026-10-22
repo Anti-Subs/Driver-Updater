@@ -15,7 +15,7 @@ namespace DriverUpdater
 {
     public class InstallOutcome
     {
-        public bool Ok, Reboot, Opened, Kept;
+        public bool Ok, Reboot, Opened, Kept, NotForDevice;
         public string Message;
         public static InstallOutcome Of(bool ok, string msg, bool reboot = false) { return new InstallOutcome { Ok = ok, Message = msg, Reboot = reboot }; }
     }
@@ -220,7 +220,23 @@ namespace DriverUpdater
         }
 
         // ------------------------------------------------------------ installing
+        /// <summary>Downloads a file; if the connection drops (e.g. a network driver was just reinstalled),
+        /// waits for it to come back and tries again (up to 3 tries).</summary>
         public static void Download(string url, string file, Action<string> status, string label)
+        {
+            for (int attempt = 1; ; attempt++)
+            {
+                try { DownloadOnce(url, file, status, label); return; }
+                catch (WebException ex)
+                {
+                    if (attempt >= 3) throw;
+                    Log.Write("Download problem (" + ex.Status + "), waiting for the connection: " + ex.Message);
+                    Net.WaitForInternet(60, status);
+                }
+            }
+        }
+
+        static void DownloadOnce(string url, string file, Action<string> status, string label)
         {
             var req = Request(url);
             req.Timeout = 60000; req.ReadWriteTimeout = 120000;
@@ -245,17 +261,34 @@ namespace DriverUpdater
             }
         }
 
+        static string PackageFile(ScanResult job)
+        {
+            string dir = Path.Combine(Paths.WorkDir, job.Source + "-" + Math.Abs(job.Ref.GetHashCode()).ToString(CultureInfo.InvariantCulture));
+            string fileName = Path.GetFileName(new Uri(job.Ref).AbsolutePath);
+            if (string.IsNullOrEmpty(fileName)) fileName = "package.bin";
+            return Path.Combine(dir, fileName);
+        }
+
+        /// <summary>Downloads a manufacturer package ahead of installing (all downloads happen before any install).</summary>
+        public static string Prefetch(ScanResult job, Action<string> status)
+        {
+            if (!Allowed(job.Ref)) throw new InvalidOperationException("Not an official download address");
+            string file = PackageFile(job), done = file + ".done";
+            if (File.Exists(file) && File.Exists(done)) return file;
+            string dir = Path.GetDirectoryName(file);
+            if (Directory.Exists(dir)) try { Directory.Delete(dir, true); } catch { }
+            Directory.CreateDirectory(dir);
+            Download(job.Ref, file, status, job.Source + " driver for " + job.Name);
+            File.WriteAllText(done, "ok");
+            return file;
+        }
+
         public static InstallOutcome Install(ScanResult job, Action<string> status)
         {
             string url = job.Ref;
             if (!Allowed(url)) return InstallOutcome.Of(false, "Blocked: unofficial download address");
-            string dir = Path.Combine(Paths.WorkDir, job.Source + "-" + Math.Abs(url.GetHashCode()).ToString(CultureInfo.InvariantCulture));
-            if (Directory.Exists(dir)) try { Directory.Delete(dir, true); } catch { }
-            Directory.CreateDirectory(dir);
-            string fileName = Path.GetFileName(new Uri(url).AbsolutePath);
-            if (string.IsNullOrEmpty(fileName)) fileName = "package.bin";
-            string file = Path.Combine(dir, fileName);
-            Download(url, file, status, job.Source + " driver for " + job.Name);
+            string file = Prefetch(job, status);
+            string dir = Path.GetDirectoryName(file);
 
             string launch = null;
             if (file.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
@@ -308,7 +341,8 @@ namespace DriverUpdater
             if (source == "Intel")
             {
                 if (f.StartsWith("gfx_win")) return "-s --overwrite --noExtras";      // graphics: silent, driver only (no Intel Graphics Software)
-                if (f.Contains("driver64") || f.StartsWith("wifi") || f.StartsWith("bt")) return "-q -s";   // Wi-Fi / Bluetooth IT packages
+                if (f.StartsWith("bt")) return "/quiet /norestart";                      // Bluetooth 24.50+: /quiet (would auto-restart without /norestart)
+                if (f.Contains("driver64") || f.StartsWith("wifi")) return "-q -s";     // Wi-Fi IT package
                 if (f.StartsWith("npu_win")) return "-s";                              // NPU (same installer family as graphics)
             }
             return null;
@@ -342,8 +376,25 @@ namespace DriverUpdater
             Log.Write(job.Source + " installer exit code " + code + "; driver version now " + now + " (offered " + job.Latest + ")");
             var have = Util.ParseVersion(now); var want = Util.ParseVersion(job.Latest);
             if (have != null && want != null && have >= want) return InstallOutcome.Of(true, "Installed");
+            if (job.Source == "Intel") return IntelOutcome(code);
             if (code == 0 || code == 3010 || code == 1641) return InstallOutcome.Of(true, "Installed", true);   // finishes after a restart
             return InstallOutcome.Of(false, (silent ? "Installer stopped" : "Not installed") + " (code " + code + ")");
+        }
+
+        /// <summary>Intel installer exit codes (Intel support article 000098195); the installer adds 1000 to them.</summary>
+        public static InstallOutcome IntelOutcome(int exitCode)
+        {
+            int c = exitCode >= 1000 ? exitCode - 1000 : exitCode;
+            switch (c)
+            {
+                case 0: case 2: case 14: return InstallOutcome.Of(true, "Installed", true);
+                case 5: case 8: return new InstallOutcome { Ok = false, NotForDevice = true, Message = "This Intel package doesn't support this device" };
+                case 6: return InstallOutcome.Of(false, "Intel's installer was closed");
+                case 7: return InstallOutcome.Of(false, "Intel's installer didn't accept the silent switches");
+                case 11: return InstallOutcome.Of(false, "Not enough free disk space");
+                case 13: return InstallOutcome.Of(false, "Restart the PC, then try again");
+                default: return InstallOutcome.Of(false, "Intel installer error " + exitCode);
+            }
         }
 
         /// <summary>

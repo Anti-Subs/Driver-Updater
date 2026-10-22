@@ -17,6 +17,12 @@ namespace DriverUpdater
     {
         static readonly string[][] Raw =
         {
+            new[] { "3.4.2", "23 Oct 2026",
+                "All updates download first, then install - a network driver reset can no longer break the other downloads",
+                "Network adapter drivers install last; dropped downloads wait for the connection and retry",
+                "Intel Bluetooth installs silently with Intel's documented switches (no automatic restart)",
+                "Intel graphics: offers the closest newer driver in your chip's own series (fixes code 1008 on older Intel graphics)",
+                "Intel installer errors explained in plain words; packages that don't fit a device aren't offered again" },
             new[] { "3.4.1", "22 Oct 2026", "About page now shows this change log" },
             new[] { "3.4.0", "22 Oct 2026",
                 "Drivers that came with Windows (like the built-in keyboard) are no longer listed - Windows keeps them updated",
