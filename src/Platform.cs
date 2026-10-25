@@ -27,6 +27,42 @@ namespace DriverUpdater
         public static readonly string OldLastScanFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DriverUpdater", "last-scan.json");
     }
 
+    /// <summary>Small app preferences (appearance...), kept with the app's other saved data.</summary>
+    public static class Settings
+    {
+        static string FileName { get { return Path.Combine(Paths.StateDir, "settings.json"); } }
+        static Dictionary<string, object> Load()
+        {
+            try { if (File.Exists(FileName)) return (Json.Read(File.ReadAllText(FileName)) as Dictionary<string, object>) ?? new Dictionary<string, object>(); } catch { }
+            return new Dictionary<string, object>();
+        }
+        public static string Get(string key, string fallback)
+        {
+            object v; return Load().TryGetValue(key, out v) && v != null ? v.ToString() : fallback;
+        }
+        public static void Set(string key, string value)
+        {
+            var d = Load(); d[key] = value;
+            try { Directory.CreateDirectory(Paths.StateDir); File.WriteAllText(FileName, Json.Write(d)); } catch (Exception ex) { Log.Write("Couldn't save settings: " + ex.Message); }
+        }
+
+        /// <summary>True when Windows is set to dark mode for apps.</summary>
+        public static bool SystemDark()
+        {
+            try
+            {
+                using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    object v = k != null ? k.GetValue("AppsUseLightTheme") : null;
+                    return v is int && (int)v == 0;
+                }
+            }
+            catch { return false; }
+        }
+
+        public static void ApplyTheme() { Theme.Dark = Theme.ShouldBeDark(Get("appearance", "auto"), SystemDark()); }
+    }
+
     public static class Log
     {
         static readonly object Gate = new object();

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.0 - 25 Oct 2026
+- New source: Dell and Alienware - drivers for your exact model from Dell's official catalog (the one Dell Command | Update uses), installed silently
+- About page lists every driver source, marking the ones used on this PC
+- Tools page: Utilities moved above the manufacturer tools
+- Dark mode: follows Windows automatically, or pick Light / Dark on the About page
+
 ## 3.6.1 - 25 Oct 2026
 - Fixed the installer for 3.6.0 not opening ("Exception has been thrown by the target of an invocation")
 

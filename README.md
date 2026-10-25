@@ -6,7 +6,8 @@ A small native Windows app that scans a PC's drivers and installs newer versions
 
 > This is a personal project. Contributions, pull requests and issues aren't accepted.
 
-- **Sources:** Windows Update, the Microsoft Update Catalog, and the official ASUS, NVIDIA and Intel driver services.
+- **Sources:** Windows Update, the Microsoft Update Catalog, and the official ASUS, Dell/Alienware, NVIDIA and Intel driver services.
+- **Dark mode:** follows Windows automatically (or choose Light / Dark on the About page).
 - **Safe installs:** a System Restore point is created first; manufacturer installers must pass a Windows signature check;
   NVIDIA and Intel drivers install silently and driver-only (no NVIDIA app / Intel Graphics Software).
 - **Single page UI:** all drivers listed; updates move to the top live during a scan; last scan remembered.

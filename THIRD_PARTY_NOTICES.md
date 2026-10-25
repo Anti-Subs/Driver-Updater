@@ -9,3 +9,9 @@
   No code from those projects is included.
 - Intel silent-install switches: Intel support articles 000055825 and 000006773, and the Intel Community forum.
 - NVIDIA silent-install switches: NVIDIA Driver Installation Guide (docs.nvidia.com).
+
+
+## Dell catalog sample (tests only)
+
+`tests/fixtures/dell-catalog-sample.xml` is a few entries copied from Dell's public driver catalog
+(downloads.dell.com/catalog), used only to test the catalog reader. It is not shipped in the app.
