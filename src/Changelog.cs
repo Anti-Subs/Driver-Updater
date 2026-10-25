@@ -17,6 +17,8 @@ namespace DriverUpdater
     {
         static readonly string[][] Raw =
         {
+            new[] { "3.5.3", "25 Oct 2026",
+                "'Remove old USB devices' now reads the device list straight from Windows Plug and Play - it was finding nothing on some PCs" },
             new[] { "3.5.2", "25 Oct 2026",
                 "BIOS / firmware updates are no longer ticked by default, need the charger plugged in, and explain the restart they need",
                 "Windows Update failures say why in plain words (busy, restart pending, installer failed...) instead of 'code 4'",

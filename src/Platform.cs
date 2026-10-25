@@ -557,48 +557,62 @@ namespace DriverUpdater
         public class Entry { public string Id, Name; }
 
         [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Locate_DevNodeW(out uint devInst, string deviceId, uint flags);
-        [DllImport("cfgmgr32.dll")] static extern int CM_Get_DevNode_Status(out uint status, out uint problem, uint devInst, uint flags);
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Get_Device_ID_List_SizeW(out uint len, string filter, uint flags);
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Get_Device_ID_ListW(string filter, char[] buffer, uint len, uint flags);
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Get_DevNode_Registry_PropertyW(uint devInst, uint prop, out uint regType, StringBuilder buffer, ref uint len, uint flags);
         [DllImport("cfgmgr32.dll")] static extern int CM_Uninstall_DevNode(uint devInst, uint flags);
-        const uint CM_LOCATE_DEVNODE_PHANTOM = 1;
+        const uint CM_LOCATE_DEVNODE_NORMAL = 0, CM_LOCATE_DEVNODE_PHANTOM = 1;
+        const uint CM_DRP_DEVICEDESC = 0x01, CM_DRP_FRIENDLYNAME = 0x0D;
         const int CR_SUCCESS = 0;
+
+        /// <summary>Every device Windows has a record of, connected or not (straight from Plug and Play).</summary>
+        static List<string> AllDeviceIds()
+        {
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                uint len;
+                if (CM_Get_Device_ID_List_SizeW(out len, null, 0) != CR_SUCCESS || len == 0) break;
+                len += 4096;   // room for devices that appear meanwhile
+                var buf = new char[len];
+                int cr = CM_Get_Device_ID_ListW(null, buf, len, 0);
+                if (cr == CR_SUCCESS)
+                    return new string(buf).Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                Log.Write("Device list read failed (CR " + cr + "), retrying");
+            }
+            return new List<string>();
+        }
+
+        static string Prop(uint dev, uint prop)
+        {
+            uint type, len = 1024; var sb = new StringBuilder(512);
+            return CM_Get_DevNode_Registry_PropertyW(dev, prop, out type, sb, ref len, 0) == CR_SUCCESS ? sb.ToString() : "";
+        }
 
         public static List<Entry> Find()
         {
             var list = new List<Entry>();
-            var rows = Query("SELECT DeviceID, Name, Present FROM Win32_PnPEntity", true)
-                    ?? Query("SELECT DeviceID, Name, ConfigManagerErrorCode FROM Win32_PnPEntity", false)
-                    ?? new List<Entry>();
-            foreach (var e in rows)
-                if (Util.IsUsbDeviceId(e.Id) && !IsConnected(e.Id)) list.Add(e);
+            var all = AllDeviceIds();
+            int usb = 0;
+            foreach (var id in all)
+            {
+                if (!Util.IsUsbDeviceId(id)) continue;
+                usb++;
+                if (IsConnected(id)) continue;
+                uint dev;
+                if (CM_Locate_DevNodeW(out dev, id, CM_LOCATE_DEVNODE_PHANTOM) != CR_SUCCESS) continue;
+                string name = Prop(dev, CM_DRP_FRIENDLYNAME);
+                if (name.Length == 0) name = Prop(dev, CM_DRP_DEVICEDESC);
+                list.Add(new Entry { Id = id, Name = name.Length > 0 ? name : id });
+            }
+            Log.Write("Devices on record: " + all.Count + ", USB: " + usb + ", USB not plugged in: " + list.Count);
             return list.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
-        static List<Entry> Query(string wql, bool hasPresent)
-        {
-            try
-            {
-                var list = new List<Entry>();
-                using (var s = new ManagementObjectSearcher(wql))
-                    foreach (ManagementObject o in s.Get())
-                    {
-                        bool gone = hasPresent ? (o["Present"] is bool && !(bool)o["Present"])
-                                               : Convert.ToInt32(o["ConfigManagerErrorCode"] ?? 0) == 45;
-                        if (!gone) continue;
-                        string id = o["DeviceID"] as string;
-                        string name = (o["Name"] as string) ?? "";
-                        list.Add(new Entry { Id = id, Name = name.Length > 0 ? name : id });
-                    }
-                return list;
-            }
-            catch (Exception ex) { Log.Write("Old device query failed (" + wql + "): " + ex.Message); return null; }
-        }
-
-        /// <summary>Safety check straight from Plug and Play: a device that is attached is never touched.</summary>
+        /// <summary>A normal locate only finds devices that are attached right now - those are never touched.</summary>
         static bool IsConnected(string id)
         {
-            uint dev, status, problem;
-            if (CM_Locate_DevNodeW(out dev, id, CM_LOCATE_DEVNODE_PHANTOM) != CR_SUCCESS) return true;   // unknown -> leave it
-            return CM_Get_DevNode_Status(out status, out problem, dev, 0) == CR_SUCCESS;
+            uint dev;
+            return CM_Locate_DevNodeW(out dev, id, CM_LOCATE_DEVNODE_NORMAL) == CR_SUCCESS;
         }
 
         /// <summary>Removes one remembered device. Windows sets it up again next time it's plugged in.</summary>
