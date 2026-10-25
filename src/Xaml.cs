@@ -43,7 +43,7 @@ namespace DriverUpdater
               <ContentPresenter HorizontalAlignment=""Center"" VerticalAlignment=""Center""/>
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""bd"" Property=""Background"" Value=""#1D4ED8""/></Trigger>
+              <Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""bd"" Property=""Background"" Value=""#1D4ED7""/></Trigger>
               <Trigger Property=""IsEnabled"" Value=""False""><Setter TargetName=""bd"" Property=""Opacity"" Value=""0.45""/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -309,10 +309,7 @@ namespace DriverUpdater
       <Grid x:Name=""PageTools"" Visibility=""Collapsed"">
         <ScrollViewer VerticalScrollBarVisibility=""Auto"" Padding=""36,30,36,20"">
           <StackPanel>
-            <TextBlock Text=""Manufacturer tools"" FontSize=""24"" FontWeight=""SemiBold"" Foreground=""#111827""/>
-            <TextBlock Text=""Intel, NVIDIA and your PC maker often release drivers before Microsoft does. Their official tools give you those newer versions safely, matched to your exact hardware."" Foreground=""#6B7280"" FontSize=""13.5"" TextWrapping=""Wrap"" Margin=""0,8,0,20"" MaxWidth=""760"" HorizontalAlignment=""Left""/>
-            <ItemsControl x:Name=""ListTools"" ItemTemplate=""{StaticResource ToolCard}""/>
-            <TextBlock Text=""Utilities"" Style=""{StaticResource SectionHeader}""/>
+            <TextBlock Text=""Utilities"" FontSize=""24"" FontWeight=""SemiBold"" Foreground=""#111827"" Margin=""0,0,0,14""/>
             <WrapPanel>
               <Button x:Name=""BtnRestore"" Content=""System Restore"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
               <Button x:Name=""BtnDevMgr"" Content=""Device Manager"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
@@ -320,6 +317,9 @@ namespace DriverUpdater
               <Button x:Name=""BtnExport"" Content=""Save driver list..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
               <Button x:Name=""BtnLog"" Content=""Open log folder"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
             </WrapPanel>
+            <TextBlock Text=""Manufacturer tools"" FontSize=""24"" FontWeight=""SemiBold"" Foreground=""#111827"" Margin=""0,18,0,0""/>
+            <TextBlock Text=""Intel, NVIDIA and your PC maker often release drivers before Microsoft does. Their official tools give you those newer versions safely, matched to your exact hardware."" Foreground=""#6B7280"" FontSize=""13.5"" TextWrapping=""Wrap"" Margin=""0,8,0,20"" MaxWidth=""760"" HorizontalAlignment=""Left""/>
+            <ItemsControl x:Name=""ListTools"" ItemTemplate=""{StaticResource ToolCard}""/>
           </StackPanel>
         </ScrollViewer>
       </Grid>
@@ -333,10 +333,35 @@ namespace DriverUpdater
             <TextBlock x:Name=""AboutVersion"" Text=""Version"" Foreground=""#6B7280"" VerticalAlignment=""Center""/>
             <Button x:Name=""BtnCheckApp"" Content=""Check for updates"" Style=""{StaticResource OutlineButton}"" Margin=""14,0,0,0""/>
           </StackPanel>
+          <StackPanel Orientation=""Horizontal"" Margin=""0,-8,0,22"">
+            <TextBlock Text=""Appearance"" Foreground=""#374151"" FontWeight=""SemiBold"" VerticalAlignment=""Center"" Margin=""0,0,14,0""/>
+            <Button x:Name=""BtnThemeAuto"" Content=""Auto (match Windows)"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,8,0""/>
+            <Button x:Name=""BtnThemeLight"" Content=""Light"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,8,0""/>
+            <Button x:Name=""BtnThemeDark"" Content=""Dark"" Style=""{StaticResource OutlineButton}""/>
+          </StackPanel>
           <Border Background=""White"" CornerRadius=""12"" Padding=""22"" BorderBrush=""#E5E7EB"" BorderThickness=""1"">
             <StackPanel>
               <TextBlock Text=""Where drivers come from"" FontWeight=""SemiBold"" FontSize=""14"" Foreground=""#111827""/>
-              <TextBlock TextWrapping=""Wrap"" Foreground=""#4B5563"" Margin=""0,6,0,16"" Text=""From Microsoft (Windows Update and the Microsoft Update Catalog, all Microsoft-signed) and directly from the official ASUS, NVIDIA and Intel support sites. Manufacturer installers are only opened if Windows confirms their digital signature. Nothing is downloaded from third-party driver sites.""/>
+              <TextBlock TextWrapping=""Wrap"" Foreground=""#4B5563"" Margin=""0,6,0,10"" Text=""Only official sources. Manufacturer installers are opened only if Windows confirms their digital signature, and nothing comes from third-party driver sites. Makers' catalogs are used on PCs and parts they're made for.""/>
+              <ItemsControl x:Name=""ListSources"" Margin=""0,0,0,16"">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Grid Margin=""0,0,0,9"">
+                      <Grid.ColumnDefinitions><ColumnDefinition Width=""Auto""/><ColumnDefinition Width=""*""/></Grid.ColumnDefinitions>
+                      <Ellipse Width=""6"" Height=""6"" Fill=""#2563EB"" VerticalAlignment=""Top"" Margin=""2,7,10,0""/>
+                      <StackPanel Grid.Column=""1"">
+                        <StackPanel Orientation=""Horizontal"">
+                          <TextBlock Text=""{Binding Name}"" FontWeight=""SemiBold"" Foreground=""#111827""/>
+                          <Border Background=""#DCFCE7"" CornerRadius=""6"" Padding=""6,1"" Margin=""8,0,0,0"" Visibility=""{Binding BadgeVisibility}"">
+                            <TextBlock Text=""Used on this PC"" FontSize=""11"" Foreground=""#15803D"" FontWeight=""SemiBold""/>
+                          </Border>
+                        </StackPanel>
+                        <TextBlock Text=""{Binding Desc}"" TextWrapping=""Wrap"" Foreground=""#4B5563"" Margin=""0,2,0,0""/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
               <TextBlock Text=""Which drivers are listed"" FontWeight=""SemiBold"" FontSize=""14"" Foreground=""#111827""/>
               <TextBlock TextWrapping=""Wrap"" Foreground=""#4B5563"" Margin=""0,6,0,16"" Text=""Drivers from hardware makers (Intel, NVIDIA, Realtek, your PC maker and so on). Generic drivers built into Windows are updated by Windows itself, so they aren't listed.""/>
               <TextBlock Text=""Safety"" FontWeight=""SemiBold"" FontSize=""14"" Foreground=""#111827""/>
@@ -389,7 +414,7 @@ namespace DriverUpdater
               <ContentPresenter HorizontalAlignment=""Center"" VerticalAlignment=""Center""/>
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""bd"" Property=""Background"" Value=""#1D4ED8""/></Trigger>
+              <Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""bd"" Property=""Background"" Value=""#1D4ED7""/></Trigger>
               <Trigger Property=""IsEnabled"" Value=""False""><Setter TargetName=""bd"" Property=""Opacity"" Value=""0.45""/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>

@@ -23,10 +23,10 @@ namespace DriverUpdater
     public static class VendorNet
     {
         // Only these official sites are used for manufacturer downloads
-        static readonly string[] AllowedHosts = { "asus.com", "nvidia.com", "geforce.com", "intel.com", "githubusercontent.com" };
+        static readonly string[] AllowedHosts = { "asus.com", "nvidia.com", "geforce.com", "intel.com", "dell.com", "githubusercontent.com" };
         // Expected digital signature (publisher) for installers we open
         // (ASUS packages may contain installers signed by the chip maker, e.g. Realtek, so for ASUS any valid signature is accepted)
-        static readonly Dictionary<string, string> Publishers = new Dictionary<string, string> { { "NVIDIA", "NVIDIA" }, { "Intel", "Intel" } };
+        static readonly Dictionary<string, string> Publishers = new Dictionary<string, string> { { "NVIDIA", "NVIDIA" }, { "Intel", "Intel" }, { "Dell", "Dell" } };
 
         public static bool Allowed(string url)
         {
@@ -89,6 +89,54 @@ namespace DriverUpdater
             ProbeAsusPackages(pk, devices, found);
             Log.Write("ASUS: " + pk.Count + " packages for " + model + ", " + found.Values.Count(r => r.Kind == "Update") + " newer than installed, " + found.Values.Count(r => r.Kind == "Ok") + " confirmed current");
             return found;
+        }
+
+        /// <summary>Dell and Alienware PCs: Dell's own catalog for this exact model (found by its system ID).</summary>
+        public static Dictionary<string, ScanResult> CheckDell(List<DeviceInfo> devices, bool win11)
+        {
+            var none = new Dictionary<string, ScanResult>();
+            string sku = Sys.Wmi1("SELECT SystemSKUNumber FROM Win32_ComputerSystem", "SystemSKUNumber").Trim();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(sku, "^[0-9A-Fa-f]{4}$")) { Log.Write("Dell: no Dell system ID ('" + sku + "') - skipped"); return none; }
+            string index = CachedCabXml(Dell.IndexUrl, "dell-index.xml");
+            string path = Dell.ModelCatalogPath(index, sku);
+            if (path == null) { Log.Write("Dell: no catalog for system ID " + sku); return none; }
+            string xml = CachedCabXml("https://downloads.dell.com/" + path, "dell-" + sku.ToUpperInvariant() + ".xml");
+            var pk = Dell.Parse(xml, win11, sku);
+            var found = VendorMatch.ByHardwareId(pk, devices);
+            Log.Write("Dell: " + pk.Count + " driver packages for system " + sku + ", " + found.Values.Count(r => r.Kind == "Update") + " newer than installed, " + found.Values.Count(r => r.Kind == "Ok") + " confirmed current");
+            return found;
+        }
+
+        /// <summary>Downloads a maker's .cab catalog, unpacks the XML inside with Windows' expand.exe, and keeps it for 24 hours.</summary>
+        static string CachedCabXml(string url, string cacheName)
+        {
+            string dir = Path.Combine(Paths.StateDir, "vendor-cache");
+            string cache = Path.Combine(dir, cacheName);
+            if (File.Exists(cache) && (DateTime.Now - File.GetLastWriteTime(cache)).TotalHours < 24) return File.ReadAllText(cache);
+            string work = Path.Combine(Paths.WorkDir, "cab-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            Directory.CreateDirectory(work);
+            try
+            {
+                string cab = Path.Combine(work, "catalog.cab");
+                using (var resp = Request(url).GetResponse())
+                using (var src = resp.GetResponseStream())
+                using (var dst = File.Create(cab)) src.CopyTo(dst);
+                string outDir = Path.Combine(work, "x");
+                Directory.CreateDirectory(outDir);
+                Sys.Run(Sys.SystemTool("expand.exe"), "-F:* \"" + cab + "\" \"" + outDir + "\"", 120000);
+                string xml = Directory.GetFiles(outDir, "*.xml", SearchOption.AllDirectories).OrderByDescending(f => new FileInfo(f).Length).FirstOrDefault();
+                if (xml == null) throw new InvalidOperationException("catalog file was empty");
+                string text = File.ReadAllText(xml);
+                Directory.CreateDirectory(dir);
+                File.WriteAllText(cache, text, Encoding.UTF8);
+                return text;
+            }
+            catch (Exception)
+            {
+                if (File.Exists(cache)) { Log.Write("Using the older saved copy of " + cacheName); return File.ReadAllText(cache); }
+                throw;
+            }
+            finally { try { Directory.Delete(work, true); } catch { } }
         }
 
         public static Dictionary<string, ScanResult> CheckNvidia(List<DeviceInfo> devices, bool win11)
@@ -356,6 +404,7 @@ namespace DriverUpdater
         public static string SilentSwitches(string source, string fileName)
         {
             string f = (fileName ?? "").ToLowerInvariant();
+            if (source == "Dell") return "/s";                                          // Dell Update Package: silent, no automatic restart
             if (source == "Intel")
             {
                 if (f.StartsWith("gfx_win")) return "-s --overwrite --noExtras";      // graphics: silent, driver only (no Intel Graphics Software)
@@ -395,8 +444,23 @@ namespace DriverUpdater
             var have = Util.ParseVersion(now); var want = Util.ParseVersion(job.Latest);
             if (have != null && want != null && have >= want) return InstallOutcome.Of(true, "Installed");
             if (job.Source == "Intel") return IntelOutcome(code);
+            if (job.Source == "Dell") return DellOutcome(code);
             if (code == 0 || code == 3010 || code == 1641) return InstallOutcome.Of(true, "Installed", true);   // finishes after a restart
             return InstallOutcome.Of(false, (silent ? "Installer stopped" : "Not installed") + " (code " + code + ")");
+        }
+
+        /// <summary>Dell Update Package exit codes (Dell's DUP documentation).</summary>
+        public static InstallOutcome DellOutcome(int code)
+        {
+            switch (code)
+            {
+                case 0: return InstallOutcome.Of(true, "Installed", true);
+                case 2: case 6: return InstallOutcome.Of(true, "Installed", true);
+                case 3: return new InstallOutcome { Ok = false, Kept = true, Message = "Dell's installer says this version is already in place" };
+                case 4: return InstallOutcome.Of(false, "Another Dell update is needed first (code 4)");
+                case 5: return new InstallOutcome { Ok = false, NotForDevice = true, Message = "Dell's package doesn't apply to this PC" };
+                default: return InstallOutcome.Of(false, "Dell installer error " + code);
+            }
         }
 
         /// <summary>Intel installer exit codes (Intel support article 000098195); the installer adds 1000 to them.</summary>

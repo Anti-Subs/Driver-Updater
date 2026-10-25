@@ -1,0 +1,1273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Manifest baseLocation="downloads.dell.com" dateTime="2024-05-20T22:58:18-05:00" releaseID="V0M0F" version="24.05.20" identifier="1f8e511d-6458-481d-97c6-50e39041efec">
+  <ReleaseNotes>
+    <Display lang="en"><![CDATA[Dell Version Control Catalog is an aggregation of all Dell Update Package(DUP)s metadata currently released on downloads.dell.com]]></Display>
+  </ReleaseNotes>
+  <InventoryComponent schemaVersion="2.0" releaseID="NWTTJ" hashMD5="d6961e162243e9266ce864a105d4fb82" size="7991352" path="FOLDER11601757M/1/InvColPC_12.2.1.2.exe" dateTime="05/14/2024" releaseDate="May 14,2024" vendorVersion="12.2.1.2" dellVersion="A00" osCode="WIN" />
+  
+  <SoftwareComponent schemaVersion="2.0" identifier="d531318d-8bdd-432f-9cce-eb64a489a2b6" packageID="T63C5" releaseID="T63C5" hashMD5="c375c8250581bc1c24f980696031de2a" path="FOLDER10267543M/3/Realtek-Memory-Card-Reader-Driver_T63C5_WIN64_10.0.22621.21366_A02_01.EXE" dateTime="2023-06-29T09:58:28Z" releaseDate="April 16, 2024" vendorVersion="10.0.22621.21366" dellVersion="A02" packageType="LW64" size="31887976">
+    <Name>
+      <Display lang="en"><![CDATA[Realtek Memory Card Reader Driver,10.0.22621.21366,A02]]></Display>
+    </Name>
+    <ComponentType value="DRVR">
+      <Display lang="en"><![CDATA[Driver]]></Display>
+    </ComponentType>
+    <Description>
+      <Display lang="en"><![CDATA[This package contains the Realtek PCIe memory card reader driver. The Realtek memory card reader driver enables communication between the Realtek card reader and the operating system.]]></Display>
+    </Description>
+    <Category value="CS">
+      <Display lang="en"><![CDATA[Chipset]]></Display>
+    </Category>
+    <SupportedDevices>
+      <Device componentID="103018" embedded="false">
+        <PCIInfo deviceID="5227" vendorID="10EC" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="5249" vendorID="10EC" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="5250" vendorID="10EC" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="093D" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="098C" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A32" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A46" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A47" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A48" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A49" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A5C" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A9D" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A9E" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0A9F" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="0AA0" subVendorID="1028" />
+        <PCIInfo deviceID="525A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0991" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="09FF" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0A44" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0A61" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0A62" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0AFE" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0AFF" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0B00" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0B01" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0B19" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0BDA" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0BDB" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0BEB" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="0C6B" subVendorID="1028" />
+        <PCIInfo deviceID="5260" vendorID="10EC" subDeviceID="10EC" subVendorID="5260" />
+        <Display lang="en"><![CDATA[Realtek Memory Card Reader Driver]]></Display>
+      </Device>
+      <Device componentID="103231" embedded="false">
+        <PCIInfo deviceID="525A" vendorID="10EC" subDeviceID="" subVendorID="" />
+        <Display lang="en"><![CDATA[Realtek Card Reader(RTS5144)]]></Display>
+      </Device>
+    </SupportedDevices>
+    <SupportedOperatingSystems>
+      <OperatingSystem osCode="IOTL4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-bit LTSC2021]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W10H4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-Bit]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W10P4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-Bit]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W21H4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 11]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W21P4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 11]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W21S4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 11 S-MODE]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="WTCLD" osVendor="Microsoft" majorVersion="0" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10S 64-Bit]]></Display>
+      </OperatingSystem>
+    </SupportedOperatingSystems>
+    <LUCategory value="NONE">
+      <Display lang="en"><![CDATA[NONE]]></Display>
+    </LUCategory>
+    <SupportedSystems>
+      <Brand key="72" prefix="XPSNOTEBOOK">
+        <Display lang="en"><![CDATA[XPS Notebook]]></Display>
+        <Model systemID="0AFE">
+          <Display lang="en"><![CDATA[XPS-17-9720]]></Display>
+        </Model>
+        <Model systemID="0AFF">
+          <Display lang="en"><![CDATA[XPS-17-9720]]></Display>
+        </Model>
+        <Model systemID="0BDA">
+          <Display lang="en"><![CDATA[XPS-17-9730]]></Display>
+        </Model>
+        <Model systemID="0BDB">
+          <Display lang="en"><![CDATA[XPS-17-9730]]></Display>
+        </Model>
+        <Model systemID="0B19">
+          <Display lang="en"><![CDATA[XPS-15-9520]]></Display>
+        </Model>
+        <Model systemID="0BEB">
+          <Display lang="en"><![CDATA[XPS-15-9530]]></Display>
+        </Model>
+        <Model systemID="0C6B">
+          <Display lang="en"><![CDATA[XPS-14-9440]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="4" prefix="LAT">
+        <Display lang="en"><![CDATA[Latitude]]></Display>
+        <Model systemID="0CD3">
+          <Display lang="en"><![CDATA[Latitude-7030-Rugged-Extreme-Tablet]]></Display>
+        </Model>
+        <Model systemID="0C05">
+          <Display lang="en"><![CDATA[Latitude-5540]]></Display>
+        </Model>
+        <Model systemID="0B11">
+          <Display lang="en"><![CDATA[Latitude-9430]]></Display>
+        </Model>
+        <Model systemID="0B12">
+          <Display lang="en"><![CDATA[Latitude-9430]]></Display>
+        </Model>
+        <Model systemID="0B04">
+          <Display lang="en"><![CDATA[Latitude-5430]]></Display>
+        </Model>
+        <Model systemID="0B05">
+          <Display lang="en"><![CDATA[Latitude-5430]]></Display>
+        </Model>
+        <Model systemID="0B0E">
+          <Display lang="en"><![CDATA[Latitude-5431]]></Display>
+        </Model>
+        <Model systemID="0B0F">
+          <Display lang="en"><![CDATA[Latitude-5531]]></Display>
+        </Model>
+        <Model systemID="0B02">
+          <Display lang="en"><![CDATA[Latitude-5330]]></Display>
+        </Model>
+        <Model systemID="0B03">
+          <Display lang="en"><![CDATA[Latitude-5330]]></Display>
+        </Model>
+        <Model systemID="0B06">
+          <Display lang="en"><![CDATA[Latitude-5530]]></Display>
+        </Model>
+        <Model systemID="0B07">
+          <Display lang="en"><![CDATA[Latitude-5530]]></Display>
+        </Model>
+        <Model systemID="0BB7">
+          <Display lang="en"><![CDATA[Latitude-7230-Rugged-Extreme-Tablet]]></Display>
+        </Model>
+        <Model systemID="0CB9">
+          <Display lang="en"><![CDATA[Latitude-5550]]></Display>
+        </Model>
+        <Model systemID="0CBC">
+          <Display lang="en"><![CDATA[Latitude-5550]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="1" prefix="OP">
+        <Display lang="en"><![CDATA[Optiplex]]></Display>
+        <Model systemID="0BCC">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCD">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCE">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCF">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD0">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD1">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD2">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD3">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0863">
+          <Display lang="en"><![CDATA[XE3]]></Display>
+        </Model>
+        <Model systemID="0864">
+          <Display lang="en"><![CDATA[XE3]]></Display>
+        </Model>
+        <Model systemID="0BCA">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7410]]></Display>
+        </Model>
+        <Model systemID="0BCB">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7410]]></Display>
+        </Model>
+        <Model systemID="0BE0">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7410]]></Display>
+        </Model>
+        <Model systemID="0BE1">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7410]]></Display>
+        </Model>
+        <Model systemID="0C6D">
+          <Display lang="en"><![CDATA[OptiPlex-Tower-7020]]></Display>
+        </Model>
+        <Model systemID="0C6E">
+          <Display lang="en"><![CDATA[OptiPlex-Tower-7020]]></Display>
+        </Model>
+        <Model systemID="0C77">
+          <Display lang="en"><![CDATA[OptiPlex-Tower-7020]]></Display>
+        </Model>
+        <Model systemID="0C78">
+          <Display lang="en"><![CDATA[OptiPlex-Tower-7020]]></Display>
+        </Model>
+        <Model systemID="0C6F">
+          <Display lang="en"><![CDATA[OptiPlex-SFF-7020]]></Display>
+        </Model>
+        <Model systemID="0C70">
+          <Display lang="en"><![CDATA[OptiPlex-SFF-7020]]></Display>
+        </Model>
+        <Model systemID="0C71">
+          <Display lang="en"><![CDATA[OptiPlex-SFF-7020]]></Display>
+        </Model>
+        <Model systemID="0C72">
+          <Display lang="en"><![CDATA[OptiPlex-SFF-7020]]></Display>
+        </Model>
+        <Model systemID="0C88">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7420]]></Display>
+        </Model>
+        <Model systemID="0C89">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7420]]></Display>
+        </Model>
+        <Model systemID="0C8A">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7420]]></Display>
+        </Model>
+        <Model systemID="0C8B">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7420]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="11" prefix="PRE">
+        <Display lang="en"><![CDATA[Precision]]></Display>
+        <Model systemID="0C06">
+          <Display lang="en"><![CDATA[Precision-3580]]></Display>
+        </Model>
+        <Model systemID="0C07">
+          <Display lang="en"><![CDATA[Precision-3581]]></Display>
+        </Model>
+        <Model systemID="0C40">
+          <Display lang="en"><![CDATA[Precision-5480]]></Display>
+        </Model>
+        <Model systemID="0C4F">
+          <Display lang="en"><![CDATA[Precision-5680]]></Display>
+        </Model>
+        <Model systemID="0C11">
+          <Display lang="en"><![CDATA[Precision-5680]]></Display>
+        </Model>
+        <Model systemID="0A9F">
+          <Display lang="en"><![CDATA[Precision-3660-Tower/Precision-3660-XE-Tower]]></Display>
+        </Model>
+        <Model systemID="0AA0">
+          <Display lang="en"><![CDATA[Precision-3660-Tower/Precision-3660-XE-Tower]]></Display>
+        </Model>
+        <Model systemID="0AC7">
+          <Display lang="en"><![CDATA[Precision-3460-SFF/Precision-3460-XE-Small-Form-Factor]]></Display>
+        </Model>
+        <Model systemID="0AC8">
+          <Display lang="en"><![CDATA[Precision-3460-SFF/Precision-3460-XE-Small-Form-Factor]]></Display>
+        </Model>
+        <Model systemID="0A3A">
+          <Display lang="en"><![CDATA[Precision-7960-Tower/Precision-7960-XL-Tower]]></Display>
+        </Model>
+        <Model systemID="0B00">
+          <Display lang="en"><![CDATA[Precision-5770]]></Display>
+        </Model>
+        <Model systemID="0B01">
+          <Display lang="en"><![CDATA[Precision-5770]]></Display>
+        </Model>
+        <Model systemID="0B1A">
+          <Display lang="en"><![CDATA[Precision-5570]]></Display>
+        </Model>
+        <Model systemID="0B08">
+          <Display lang="en"><![CDATA[Precision-3570]]></Display>
+        </Model>
+        <Model systemID="0B10">
+          <Display lang="en"><![CDATA[Precision-3571]]></Display>
+        </Model>
+        <Model systemID="0B22">
+          <Display lang="en"><![CDATA[Precision-7865-Tower]]></Display>
+        </Model>
+        <Model systemID="0B2A">
+          <Display lang="en"><![CDATA[Precision-7670]]></Display>
+        </Model>
+        <Model systemID="0B2B">
+          <Display lang="en"><![CDATA[Precision-7770]]></Display>
+        </Model>
+        <Model systemID="0A3C">
+          <Display lang="en"><![CDATA[Precision-5860-Tower/Precision-5860-XL-Tower]]></Display>
+        </Model>
+        <Model systemID="0BC1">
+          <Display lang="en"><![CDATA[Precision-3470]]></Display>
+        </Model>
+        <Model systemID="0C41">
+          <Display lang="en"><![CDATA[Precision-7680]]></Display>
+        </Model>
+        <Model systemID="0C42">
+          <Display lang="en"><![CDATA[Precision-7780]]></Display>
+        </Model>
+        <Model systemID="0CC8">
+          <Display lang="en"><![CDATA[Precision-5690]]></Display>
+        </Model>
+        <Model systemID="0CBA">
+          <Display lang="en"><![CDATA[Precision-3590]]></Display>
+        </Model>
+        <Model systemID="0CBB">
+          <Display lang="en"><![CDATA[Precision-3591]]></Display>
+        </Model>
+        <Model systemID="0C8C">
+          <Display lang="en"><![CDATA[Precision-3680-Tower/Precision-3680-XE-Tower]]></Display>
+        </Model>
+        <Model systemID="0C8D">
+          <Display lang="en"><![CDATA[Precision-3680-Tower/Precision-3680-XE-Tower]]></Display>
+        </Model>
+        <Model systemID="0CC7">
+          <Display lang="en"><![CDATA[Precision-5490]]></Display>
+        </Model>
+      </Brand>
+    </SupportedSystems>
+    <ImportantInfo URL="http://www.dell.com/support/home/us/en/19/Drivers/DriversDetails?driverId=T63C5" />
+    <Criticality value="2">
+      <Display lang="en"><![CDATA[Urgent]]></Display>
+    </Criticality>
+  </SoftwareComponent>
+  <SoftwareComponent schemaVersion="2.0" identifier="af609ca3-30de-4b59-b4cb-7559c963f652" packageID="31P6K" releaseID="31P6K" hashMD5="6062c38128723245db46d27722e64520" path="FOLDER09365491M/1/Intel-Dynamic-Tuning-Driver_31P6K_WIN64_9.0.11202.31222_A12.EXE" dateTime="2022-12-14T01:15:02Z" releaseDate="April 02, 2024" vendorVersion="9.0.11202.31222" dellVersion="A12" packageType="LW64" size="18719216">
+    <Name>
+      <Display lang="en"><![CDATA[Intel Dynamic Tuning Driver,9.0.11202.31222,A12]]></Display>
+    </Name>
+    <ComponentType value="DRVR">
+      <Display lang="en"><![CDATA[Driver]]></Display>
+    </ComponentType>
+    <Description>
+      <Display lang="en"><![CDATA[This package contains the Intel Dynamic Tuning driver. The Intel Dynamic Tuning is a power and thermal management solution that is used to resolve fan noise, overheating, and performance-related issues of the system.]]></Display>
+    </Description>
+    <Category value="CS">
+      <Display lang="en"><![CDATA[Chipset]]></Display>
+    </Category>
+    <SupportedDevices>
+      <Device componentID="102309" embedded="false">
+        <PCIInfo deviceID="3258" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="461D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="46A0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9A03" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9A03" vendorID="8086" subDeviceID="0A32" subVendorID="1028" />
+        <PCIInfo deviceID="A71D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <Display lang="en"><![CDATA[Intel Dynamic Tuning]]></Display>
+      </Device>
+      <Device componentID="110611" embedded="false">
+        <Display lang="en"><![CDATA[Intel Dynamic Tuning]]></Display>
+      </Device>
+    </SupportedDevices>
+    <SupportedOperatingSystems>
+      <OperatingSystem osCode="IOTL4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-bit LTSC2021]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W10H4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-Bit]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W10P4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-Bit]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W21H4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 11]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W21P4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 11]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W21S4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 11 S-MODE]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="WTCLD" osVendor="Microsoft" majorVersion="0" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10S 64-Bit]]></Display>
+      </OperatingSystem>
+    </SupportedOperatingSystems>
+    <LUCategory value="NONE">
+      <Display lang="en"><![CDATA[NONE]]></Display>
+    </LUCategory>
+    <SupportedSystems>
+      <Brand key="72" prefix="XPSNOTEBOOK">
+        <Display lang="en"><![CDATA[XPS Notebook]]></Display>
+        <Model systemID="0AFE">
+          <Display lang="en"><![CDATA[XPS-17-9720]]></Display>
+        </Model>
+        <Model systemID="0AFF">
+          <Display lang="en"><![CDATA[XPS-17-9720]]></Display>
+        </Model>
+        <Model systemID="0B14">
+          <Display lang="en"><![CDATA[XPS-9315]]></Display>
+        </Model>
+        <Model systemID="0B34">
+          <Display lang="en"><![CDATA[XPS-13-9315-2-in-1]]></Display>
+        </Model>
+        <Model systemID="0B49">
+          <Display lang="en"><![CDATA[XPS-13-9315-2-in-1]]></Display>
+        </Model>
+        <Model systemID="0BDA">
+          <Display lang="en"><![CDATA[XPS-17-9730]]></Display>
+        </Model>
+        <Model systemID="0BDB">
+          <Display lang="en"><![CDATA[XPS-17-9730]]></Display>
+        </Model>
+        <Model systemID="0B19">
+          <Display lang="en"><![CDATA[XPS-15-9520]]></Display>
+        </Model>
+        <Model systemID="0BEB">
+          <Display lang="en"><![CDATA[XPS-15-9530]]></Display>
+        </Model>
+        <Model systemID="0AF3">
+          <Display lang="en"><![CDATA[XPS-13-9320]]></Display>
+        </Model>
+        <Model systemID="0C10">
+          <Display lang="en"><![CDATA[XPS-13-9320]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="4" prefix="LAT">
+        <Display lang="en"><![CDATA[Latitude]]></Display>
+        <Model systemID="0CD3">
+          <Display lang="en"><![CDATA[Latitude-7030-Rugged-Extreme-Tablet]]></Display>
+        </Model>
+        <Model systemID="0C03">
+          <Display lang="en"><![CDATA[Latitude-5340]]></Display>
+        </Model>
+        <Model systemID="0C04">
+          <Display lang="en"><![CDATA[Latitude-5340]]></Display>
+        </Model>
+        <Model systemID="0C05">
+          <Display lang="en"><![CDATA[Latitude-5540]]></Display>
+        </Model>
+        <Model systemID="0C0F">
+          <Display lang="en"><![CDATA[Latitude-9440-2-in-1]]></Display>
+        </Model>
+        <Model systemID="0C12">
+          <Display lang="en"><![CDATA[Latitude-9440-2-in-1]]></Display>
+        </Model>
+        <Model systemID="0C1A">
+          <Display lang="en"><![CDATA[Latitude-3340]]></Display>
+        </Model>
+        <Model systemID="0C19">
+          <Display lang="en"><![CDATA[Latitude-3340]]></Display>
+        </Model>
+        <Model systemID="0C1B">
+          <Display lang="en"><![CDATA[Latitude-3440]]></Display>
+        </Model>
+        <Model systemID="0C1D">
+          <Display lang="en"><![CDATA[Latitude-3440]]></Display>
+        </Model>
+        <Model systemID="0C1C">
+          <Display lang="en"><![CDATA[Latitude-3540]]></Display>
+        </Model>
+        <Model systemID="0C1E">
+          <Display lang="en"><![CDATA[Latitude-3540]]></Display>
+        </Model>
+        <Model systemID="0B8C">
+          <Display lang="en"><![CDATA[Latitude-9330]]></Display>
+        </Model>
+        <Model systemID="0B11">
+          <Display lang="en"><![CDATA[Latitude-9430]]></Display>
+        </Model>
+        <Model systemID="0B12">
+          <Display lang="en"><![CDATA[Latitude-9430]]></Display>
+        </Model>
+        <Model systemID="0B09">
+          <Display lang="en"><![CDATA[Latitude-7330]]></Display>
+        </Model>
+        <Model systemID="0B0A">
+          <Display lang="en"><![CDATA[Latitude-7330]]></Display>
+        </Model>
+        <Model systemID="0B0B">
+          <Display lang="en"><![CDATA[Latitude-7430]]></Display>
+        </Model>
+        <Model systemID="0B0C">
+          <Display lang="en"><![CDATA[Latitude-7430]]></Display>
+        </Model>
+        <Model systemID="0B0D">
+          <Display lang="en"><![CDATA[Latitude-7530]]></Display>
+        </Model>
+        <Model systemID="0B0E">
+          <Display lang="en"><![CDATA[Latitude-5431]]></Display>
+        </Model>
+        <Model systemID="0B0F">
+          <Display lang="en"><![CDATA[Latitude-5531]]></Display>
+        </Model>
+        <Model systemID="0B02">
+          <Display lang="en"><![CDATA[Latitude-5330]]></Display>
+        </Model>
+        <Model systemID="0B03">
+          <Display lang="en"><![CDATA[Latitude-5330]]></Display>
+        </Model>
+        <Model systemID="0C08">
+          <Display lang="en"><![CDATA[Latitude-7340]]></Display>
+        </Model>
+        <Model systemID="0C09">
+          <Display lang="en"><![CDATA[Latitude-7340]]></Display>
+        </Model>
+        <Model systemID="0C0A">
+          <Display lang="en"><![CDATA[Latitude-7340]]></Display>
+        </Model>
+        <Model systemID="0C0B">
+          <Display lang="en"><![CDATA[Latitude-7440]]></Display>
+        </Model>
+        <Model systemID="0C0C">
+          <Display lang="en"><![CDATA[Latitude-7440]]></Display>
+        </Model>
+        <Model systemID="0C0D">
+          <Display lang="en"><![CDATA[Latitude-7440]]></Display>
+        </Model>
+        <Model systemID="0C0E">
+          <Display lang="en"><![CDATA[Latitude-7640]]></Display>
+        </Model>
+        <Model systemID="0C00">
+          <Display lang="en"><![CDATA[Latitude-5440]]></Display>
+        </Model>
+        <Model systemID="0C01">
+          <Display lang="en"><![CDATA[Latitude-5440]]></Display>
+        </Model>
+        <Model systemID="0D0B">
+          <Display lang="en"><![CDATA[Latitude-5440]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="11" prefix="PRE">
+        <Display lang="en"><![CDATA[Precision]]></Display>
+        <Model systemID="0C06">
+          <Display lang="en"><![CDATA[Precision-3580]]></Display>
+        </Model>
+        <Model systemID="0C07">
+          <Display lang="en"><![CDATA[Precision-3581]]></Display>
+        </Model>
+        <Model systemID="0C40">
+          <Display lang="en"><![CDATA[Precision-5480]]></Display>
+        </Model>
+        <Model systemID="0C4F">
+          <Display lang="en"><![CDATA[Precision-5680]]></Display>
+        </Model>
+        <Model systemID="0C11">
+          <Display lang="en"><![CDATA[Precision-5680]]></Display>
+        </Model>
+        <Model systemID="0B29">
+          <Display lang="en"><![CDATA[Precision-5470]]></Display>
+        </Model>
+        <Model systemID="0A9F">
+          <Display lang="en"><![CDATA[Precision-3660-Tower/Precision-3660-XE-Tower]]></Display>
+        </Model>
+        <Model systemID="0AA0">
+          <Display lang="en"><![CDATA[Precision-3660-Tower/Precision-3660-XE-Tower]]></Display>
+        </Model>
+        <Model systemID="0B00">
+          <Display lang="en"><![CDATA[Precision-5770]]></Display>
+        </Model>
+        <Model systemID="0B01">
+          <Display lang="en"><![CDATA[Precision-5770]]></Display>
+        </Model>
+        <Model systemID="0B1A">
+          <Display lang="en"><![CDATA[Precision-5570]]></Display>
+        </Model>
+        <Model systemID="0B10">
+          <Display lang="en"><![CDATA[Precision-3571]]></Display>
+        </Model>
+        <Model systemID="0B2A">
+          <Display lang="en"><![CDATA[Precision-7670]]></Display>
+        </Model>
+        <Model systemID="0B2B">
+          <Display lang="en"><![CDATA[Precision-7770]]></Display>
+        </Model>
+        <Model systemID="0BC1">
+          <Display lang="en"><![CDATA[Precision-3470]]></Display>
+        </Model>
+        <Model systemID="0C02">
+          <Display lang="en"><![CDATA[Precision-3480]]></Display>
+        </Model>
+        <Model systemID="0C41">
+          <Display lang="en"><![CDATA[Precision-7680]]></Display>
+        </Model>
+        <Model systemID="0C42">
+          <Display lang="en"><![CDATA[Precision-7780]]></Display>
+        </Model>
+      </Brand>
+    </SupportedSystems>
+    <ImportantInfo URL="http://www.dell.com/support/home/us/en/19/Drivers/DriversDetails?driverId=31P6K" />
+    <Criticality value="1">
+      <Display lang="en"><![CDATA[Recommended]]></Display>
+    </Criticality>
+  </SoftwareComponent>
+  <SoftwareComponent schemaVersion="2.0" identifier="e3f2ecb7-1fe2-4ada-8495-ba81726b17ac" packageID="KVVGF" releaseID="KVVGF" hashMD5="967f8c2b0644475ecdbefab53c25dd54" path="FOLDER09072162M/2/Intel-HID-Event-Filter-Driver_KVVGF_WIN64_2.2.2.1_A18_01.EXE" dateTime="2022-06-28T02:28:14Z" releaseDate="April 02, 2024" vendorVersion="2.2.2.1" dellVersion="A18" packageType="LW64" size="11967248">
+    <Name>
+      <Display lang="en"><![CDATA[Intel HID Event Filter Driver,2.2.2.1,A18]]></Display>
+    </Name>
+    <ComponentType value="DRVR">
+      <Display lang="en"><![CDATA[Driver]]></Display>
+    </ComponentType>
+    <Description>
+      <Display lang="en"><![CDATA[This package contains the Intel HID Event Filter driver. The Intel human interface device (HID) driver enables the BIOS to communicate with the operating system through Intel HID messages during an event of any input. This driver enables all input devices to function.]]></Display>
+    </Description>
+    <Category value="IN">
+      <Display lang="en"><![CDATA[Input]]></Display>
+    </Category>
+    <SupportedDevices>
+      <Device componentID="105204" embedded="false">
+        <Display lang="en"><![CDATA[Intel HID Event Filter]]></Display>
+      </Device>
+      <Device componentID="112123" embedded="false">
+        <Display lang="en"><![CDATA[Intel HID Event Filter]]></Display>
+      </Device>
+    </SupportedDevices>
+    <SupportedOperatingSystems>
+      <OperatingSystem osCode="EXCAL" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-bit- Excalibur]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="EXCBC" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-bit- Excalibur]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="EXNOS" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-bit- Excalibur]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="IOT01" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-Bit]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="IOTL3" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-Bit]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="IOTL4" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-bit LTSC2021]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="PE1064" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows 10 64-Bit]]></Display>
+      </OperatingSystem>
+    </SupportedOperatingSystems>
+    <LUCategory value="NONE">
+      <Display lang="en"><![CDATA[NONE]]></Display>
+    </LUCategory>
+    <SupportedSystems>
+      <Brand key="72" prefix="XPSNOTEBOOK">
+        <Display lang="en"><![CDATA[XPS Notebook]]></Display>
+        <Model systemID="0BDA">
+          <Display lang="en"><![CDATA[XPS-17-9730]]></Display>
+        </Model>
+        <Model systemID="0BDB">
+          <Display lang="en"><![CDATA[XPS-17-9730]]></Display>
+        </Model>
+        <Model systemID="0BEB">
+          <Display lang="en"><![CDATA[XPS-15-9530]]></Display>
+        </Model>
+        <Model systemID="0AF3">
+          <Display lang="en"><![CDATA[XPS-13-9320]]></Display>
+        </Model>
+        <Model systemID="0C10">
+          <Display lang="en"><![CDATA[XPS-13-9320]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="4" prefix="LAT">
+        <Display lang="en"><![CDATA[Latitude]]></Display>
+        <Model systemID="0CD3">
+          <Display lang="en"><![CDATA[Latitude-7030-Rugged-Extreme-Tablet]]></Display>
+        </Model>
+        <Model systemID="0C03">
+          <Display lang="en"><![CDATA[Latitude-5340]]></Display>
+        </Model>
+        <Model systemID="0C04">
+          <Display lang="en"><![CDATA[Latitude-5340]]></Display>
+        </Model>
+        <Model systemID="0C05">
+          <Display lang="en"><![CDATA[Latitude-5540]]></Display>
+        </Model>
+        <Model systemID="0C0F">
+          <Display lang="en"><![CDATA[Latitude-9440-2-in-1]]></Display>
+        </Model>
+        <Model systemID="0C12">
+          <Display lang="en"><![CDATA[Latitude-9440-2-in-1]]></Display>
+        </Model>
+        <Model systemID="0C1A">
+          <Display lang="en"><![CDATA[Latitude-3340]]></Display>
+        </Model>
+        <Model systemID="0C19">
+          <Display lang="en"><![CDATA[Latitude-3340]]></Display>
+        </Model>
+        <Model systemID="0C1B">
+          <Display lang="en"><![CDATA[Latitude-3440]]></Display>
+        </Model>
+        <Model systemID="0C1D">
+          <Display lang="en"><![CDATA[Latitude-3440]]></Display>
+        </Model>
+        <Model systemID="0C1C">
+          <Display lang="en"><![CDATA[Latitude-3540]]></Display>
+        </Model>
+        <Model systemID="0C1E">
+          <Display lang="en"><![CDATA[Latitude-3540]]></Display>
+        </Model>
+        <Model systemID="0BB7">
+          <Display lang="en"><![CDATA[Latitude-7230-Rugged-Extreme-Tablet]]></Display>
+        </Model>
+        <Model systemID="0C08">
+          <Display lang="en"><![CDATA[Latitude-7340]]></Display>
+        </Model>
+        <Model systemID="0C09">
+          <Display lang="en"><![CDATA[Latitude-7340]]></Display>
+        </Model>
+        <Model systemID="0C0A">
+          <Display lang="en"><![CDATA[Latitude-7340]]></Display>
+        </Model>
+        <Model systemID="0C0B">
+          <Display lang="en"><![CDATA[Latitude-7440]]></Display>
+        </Model>
+        <Model systemID="0C0C">
+          <Display lang="en"><![CDATA[Latitude-7440]]></Display>
+        </Model>
+        <Model systemID="0C0D">
+          <Display lang="en"><![CDATA[Latitude-7440]]></Display>
+        </Model>
+        <Model systemID="0C0E">
+          <Display lang="en"><![CDATA[Latitude-7640]]></Display>
+        </Model>
+        <Model systemID="0BDC">
+          <Display lang="en"><![CDATA[Latitude-3140]]></Display>
+        </Model>
+        <Model systemID="0BE2">
+          <Display lang="en"><![CDATA[Latitude-3140]]></Display>
+        </Model>
+        <Model systemID="0C00">
+          <Display lang="en"><![CDATA[Latitude-5440]]></Display>
+        </Model>
+        <Model systemID="0C01">
+          <Display lang="en"><![CDATA[Latitude-5440]]></Display>
+        </Model>
+        <Model systemID="0D0B">
+          <Display lang="en"><![CDATA[Latitude-5440]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="1" prefix="OP">
+        <Display lang="en"><![CDATA[Optiplex]]></Display>
+        <Model systemID="0BCC">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCD">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCE">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCF">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD0">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD1">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD2">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD3">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BE3">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BE4">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BE5">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BE6">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCA">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7410]]></Display>
+        </Model>
+        <Model systemID="0BCB">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7410]]></Display>
+        </Model>
+        <Model systemID="0BE0">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7410]]></Display>
+        </Model>
+        <Model systemID="0BE1">
+          <Display lang="en"><![CDATA[OptiPlex-AIO-7410]]></Display>
+        </Model>
+        <Model systemID="0C79">
+          <Display lang="en"><![CDATA[OptiPlex-Micro-7020]]></Display>
+        </Model>
+        <Model systemID="0C7A">
+          <Display lang="en"><![CDATA[OptiPlex-Micro-7020]]></Display>
+        </Model>
+        <Model systemID="0C7B">
+          <Display lang="en"><![CDATA[OptiPlex-Micro-7020]]></Display>
+        </Model>
+        <Model systemID="0C7C">
+          <Display lang="en"><![CDATA[OptiPlex-Micro-7020]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="11" prefix="PRE">
+        <Display lang="en"><![CDATA[Precision]]></Display>
+        <Model systemID="0C06">
+          <Display lang="en"><![CDATA[Precision-3580]]></Display>
+        </Model>
+        <Model systemID="0C07">
+          <Display lang="en"><![CDATA[Precision-3581]]></Display>
+        </Model>
+        <Model systemID="0C40">
+          <Display lang="en"><![CDATA[Precision-5480]]></Display>
+        </Model>
+        <Model systemID="0C4F">
+          <Display lang="en"><![CDATA[Precision-5680]]></Display>
+        </Model>
+        <Model systemID="0C11">
+          <Display lang="en"><![CDATA[Precision-5680]]></Display>
+        </Model>
+        <Model systemID="0A9F">
+          <Display lang="en"><![CDATA[Precision-3660-Tower/Precision-3660-XE-Tower]]></Display>
+        </Model>
+        <Model systemID="0AA0">
+          <Display lang="en"><![CDATA[Precision-3660-Tower/Precision-3660-XE-Tower]]></Display>
+        </Model>
+        <Model systemID="0AC7">
+          <Display lang="en"><![CDATA[Precision-3460-SFF/Precision-3460-XE-Small-Form-Factor]]></Display>
+        </Model>
+        <Model systemID="0AC8">
+          <Display lang="en"><![CDATA[Precision-3460-SFF/Precision-3460-XE-Small-Form-Factor]]></Display>
+        </Model>
+        <Model systemID="0AC9">
+          <Display lang="en"><![CDATA[Precision-3260-Compact/Precision-3260-XE-Compact]]></Display>
+        </Model>
+        <Model systemID="0ACA">
+          <Display lang="en"><![CDATA[Precision-3260-Compact/Precision-3260-XE-Compact]]></Display>
+        </Model>
+        <Model systemID="0C02">
+          <Display lang="en"><![CDATA[Precision-3480]]></Display>
+        </Model>
+        <Model systemID="0C41">
+          <Display lang="en"><![CDATA[Precision-7680]]></Display>
+        </Model>
+        <Model systemID="0C42">
+          <Display lang="en"><![CDATA[Precision-7780]]></Display>
+        </Model>
+      </Brand>
+    </SupportedSystems>
+    <ImportantInfo URL="http://www.dell.com/support/home/us/en/19/Drivers/DriversDetails?driverId=KVVGF" />
+    <Criticality value="1">
+      <Display lang="en"><![CDATA[Recommended]]></Display>
+    </Criticality>
+  </SoftwareComponent>
+  <SoftwareComponent schemaVersion="2.0" identifier="f16a6674-b7e7-4766-b745-fe231057a612" packageID="9YMCC" releaseID="9YMCC" hashMD5="233e23542731a11dbff310be218dd30f" path="FOLDER11488709M/1/OptiPlex_7010_1.14.0_SEMB.exe" dateTime="2024-03-26T10:46:23Z" releaseDate="May 14, 2024" vendorVersion="1.14.0" dellVersion="1.14.0" packageType="LWXP" size="112801448">
+    <Name>
+      <Display lang="en"><![CDATA[Dell OptiPlex 7010 System BIOS,1.14.0,1.14.0]]></Display>
+    </Name>
+    <ComponentType value="BIOS">
+      <Display lang="en"><![CDATA[BIOS]]></Display>
+    </ComponentType>
+    <Description>
+      <Display lang="en"><![CDATA[This package contains the Dell system BIOS update. BIOS is a firmware package that is embedded on a small memory chip on the system board. It controls the keyboard, monitor, disk drives, and other devices.]]></Display>
+    </Description>
+    <Category value="BI">
+      <Display lang="en"><![CDATA[BIOS]]></Display>
+    </Category>
+    <SupportedDevices>
+      <Device componentID="159" embedded="false">
+        <Display lang="en"><![CDATA[BIOS]]></Display>
+      </Device>
+    </SupportedDevices>
+    <LUCategory value="NONE">
+      <Display lang="en"><![CDATA[NONE]]></Display>
+    </LUCategory>
+    <SupportedSystems>
+      <Brand key="1" prefix="OP">
+        <Display lang="en"><![CDATA[Optiplex]]></Display>
+        <Model systemID="0BCC">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCD">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCE">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BCF">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD0">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD1">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD2">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BD3">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BE3">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BE4">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BE5">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+        <Model systemID="0BE6">
+          <Display lang="en"><![CDATA[7010]]></Display>
+        </Model>
+      </Brand>
+    </SupportedSystems>
+    <ImportantInfo URL="http://www.dell.com/support/home/us/en/19/Drivers/DriversDetails?driverId=9YMCC" />
+    <Criticality value="1">
+      <Display lang="en"><![CDATA[Recommended]]></Display>
+    </Criticality>
+  </SoftwareComponent>
+  <SoftwareComponent schemaVersion="2.0" identifier="cbc124fd-8e27-47ba-8d53-6f611a9ae82d" packageID="DJT82" releaseID="DJT82" hashMD5="2111184de8f1d590f693018a66283562" path="FOLDER05858037M/3/Chipset_Driver_DJT82_WN32_1932.12.0.1298_A04.EXE" dateTime="2019-06-16T12:34:04Z" releaseDate="January 22, 2024" vendorVersion="1932.12.0.1298" dellVersion="A04" packageType="LW64" size="134909632">
+    <Name>
+      <Display lang="en"><![CDATA[Intel Management Engine Components Installer,1932.12.0.1298,A04]]></Display>
+    </Name>
+    <ComponentType value="DRVR">
+      <Display lang="en"><![CDATA[Driver]]></Display>
+    </ComponentType>
+    <Description>
+      <Display lang="en"><![CDATA[This package contains the driver for the Intel Management Engine Components Installer. This driver installs Intel Management Engine Interface, Serial Over LAN driver, Intel Management and Security Application Local Management Service, Intel Converged Security and Manageability Engine (CSME), Intel Management Engine Windows Management Instrumentation (WMI) provider, Intel Management and Security Status application, and Intel Capability Licensing Service Client. This update addresses the Intel Security Advisory INTEL-SA-00241. A security advisory is a statement when a security vulnerability impacts a product, and a remedy is available for the vulnerability.]]></Display>
+    </Description>
+    <Category value="CS">
+      <Display lang="en"><![CDATA[Chipset]]></Display>
+    </Category>
+    <SupportedDevices>
+      <Device componentID="100950" embedded="false">
+        <PCIInfo deviceID="0000" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="02F0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="06E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="06E3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="0A9A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="0F18" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="18D3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1A9A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1BE0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1BE3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1C3A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1C3D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1CBA" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1CBD" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1D3A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1D3D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1DBA" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1DBD" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1E3A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="1E3D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="2298" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="2526" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="271B" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="271C" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="2720" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="2723" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="30DC" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="319A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="31DC" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="34E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="34F0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="38E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="3DE0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="3DE3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="3DF0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="40C0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="43E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="43F0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="4B70" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="4DE0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="51E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="51E3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="54E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="54E3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="5A9A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="7A68" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="7A6B" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="7AE8" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="7AEB" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="7E70" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="7E73" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="7F68" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="7F6B" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="8C3A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="8C3D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="8CBA" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="8D3A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="8D3D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="98E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="98E5" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9C3A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9C3D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9CBA" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9CBD" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9D3A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9D3D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9DE0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9DE3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="9DF0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A0E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A0E3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A0F0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A13A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A13D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A1BA" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A1BD" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A23A" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A23D" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A2BA" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A2BD" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A2E0" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A2E3" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A360" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A360" vendorID="8086" subDeviceID="0871" subVendorID="1028" />
+        <PCIInfo deviceID="A360" vendorID="8086" subDeviceID="0872" subVendorID="1028" />
+        <PCIInfo deviceID="A363" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A370" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A3BA" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A3BD" vendorID="8086" subDeviceID="" subVendorID="" />
+        <PCIInfo deviceID="A870" vendorID="8086" subDeviceID="" subVendorID="" />
+        <Display lang="en"><![CDATA[Intel Management Engine Components Installer]]></Display>
+      </Device>
+    </SupportedDevices>
+    <SupportedOperatingSystems>
+      <OperatingSystem osCode="W12RS" osVendor="Microsoft" majorVersion="6" minorVersion="2" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows Server 2012 R2]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="W14TS" osVendor="Microsoft" majorVersion="10" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows Server 2016]]></Display>
+      </OperatingSystem>
+      <OperatingSystem osCode="WR2S1" osVendor="Microsoft" majorVersion="6" minorVersion="0" spMajorVersion="0" spMinorVersion="0" osArch="x64">
+        <Display lang="en"><![CDATA[Windows Server 2008 R2]]></Display>
+      </OperatingSystem>
+    </SupportedOperatingSystems>
+    <LUCategory value="NONE">
+      <Display lang="en"><![CDATA[NONE]]></Display>
+    </LUCategory>
+    <SupportedSystems>
+      <Brand key="4" prefix="LAT">
+        <Display lang="en"><![CDATA[Latitude]]></Display>
+        <Model systemID="07D3">
+          <Display lang="en"><![CDATA[7212]]></Display>
+        </Model>
+        <Model systemID="0878">
+          <Display lang="en"><![CDATA[3390-2-in-1]]></Display>
+        </Model>
+        <Model systemID="07B4">
+          <Display lang="en"><![CDATA[3380]]></Display>
+        </Model>
+        <Model systemID="07AA">
+          <Display lang="en"><![CDATA[5289]]></Display>
+        </Model>
+        <Model systemID="07A4">
+          <Display lang="en"><![CDATA[5285]]></Display>
+        </Model>
+        <Model systemID="06E6">
+          <Display lang="en"><![CDATA[5175/5179]]></Display>
+        </Model>
+        <Model systemID="08BB">
+          <Display lang="en"><![CDATA[3300]]></Display>
+        </Model>
+        <Model systemID="06DD">
+          <Display lang="en"><![CDATA[E5270]]></Display>
+        </Model>
+        <Model systemID="0823">
+          <Display lang="en"><![CDATA[7390-2-in-1]]></Display>
+        </Model>
+        <Model systemID="0815">
+          <Display lang="en"><![CDATA[5290]]></Display>
+        </Model>
+        <Model systemID="0816">
+          <Display lang="en"><![CDATA[5490]]></Display>
+        </Model>
+        <Model systemID="0817">
+          <Display lang="en"><![CDATA[5590]]></Display>
+        </Model>
+        <Model systemID="07B7">
+          <Display lang="en"><![CDATA[3480]]></Display>
+        </Model>
+        <Model systemID="07B8">
+          <Display lang="en"><![CDATA[3580]]></Display>
+        </Model>
+        <Model systemID="07A5">
+          <Display lang="en"><![CDATA[7285]]></Display>
+        </Model>
+        <Model systemID="07A6">
+          <Display lang="en"><![CDATA[5280]]></Display>
+        </Model>
+        <Model systemID="07D0">
+          <Display lang="en"><![CDATA[5480]]></Display>
+        </Model>
+        <Model systemID="07A7">
+          <Display lang="en"><![CDATA[5480]]></Display>
+        </Model>
+        <Model systemID="07D1">
+          <Display lang="en"><![CDATA[5580]]></Display>
+        </Model>
+        <Model systemID="07A8">
+          <Display lang="en"><![CDATA[5580]]></Display>
+        </Model>
+        <Model systemID="07AB">
+          <Display lang="en"><![CDATA[7389]]></Display>
+        </Model>
+        <Model systemID="081A">
+          <Display lang="en"><![CDATA[7290]]></Display>
+        </Model>
+        <Model systemID="081C">
+          <Display lang="en"><![CDATA[7490]]></Display>
+        </Model>
+        <Model systemID="081B">
+          <Display lang="en"><![CDATA[7390]]></Display>
+        </Model>
+        <Model systemID="081D">
+          <Display lang="en"><![CDATA[5290-2-IN-1]]></Display>
+        </Model>
+        <Model systemID="06DB">
+          <Display lang="en"><![CDATA[E7270]]></Display>
+        </Model>
+        <Model systemID="06DE">
+          <Display lang="en"><![CDATA[E5470]]></Display>
+        </Model>
+        <Model systemID="06DF">
+          <Display lang="en"><![CDATA[E5570]]></Display>
+        </Model>
+        <Model systemID="0818">
+          <Display lang="en"><![CDATA[5491]]></Display>
+        </Model>
+        <Model systemID="0819">
+          <Display lang="en"><![CDATA[5591]]></Display>
+        </Model>
+        <Model systemID="087A">
+          <Display lang="en"><![CDATA[5424]]></Display>
+        </Model>
+        <Model systemID="0879">
+          <Display lang="en"><![CDATA[Latitude-5420-Rugged]]></Display>
+        </Model>
+        <Model systemID="087B">
+          <Display lang="en"><![CDATA[7424]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="72" prefix="XPSNOTEBOOK">
+        <Display lang="en"><![CDATA[XPS Notebook]]></Display>
+        <Model systemID="06E4">
+          <Display lang="en"><![CDATA[9550]]></Display>
+        </Model>
+        <Model systemID="0704">
+          <Display lang="en"><![CDATA[9350]]></Display>
+        </Model>
+        <Model systemID="087C">
+          <Display lang="en"><![CDATA[9570]]></Display>
+        </Model>
+        <Model systemID="075B">
+          <Display lang="en"><![CDATA[9360]]></Display>
+        </Model>
+        <Model systemID="082A">
+          <Display lang="en"><![CDATA[9360]]></Display>
+        </Model>
+        <Model systemID="07BE">
+          <Display lang="en"><![CDATA[9560]]></Display>
+        </Model>
+        <Model systemID="077A">
+          <Display lang="en"><![CDATA[9365]]></Display>
+        </Model>
+        <Model systemID="07E6">
+          <Display lang="en"><![CDATA[9370]]></Display>
+        </Model>
+        <Model systemID="080D">
+          <Display lang="en"><![CDATA[9575]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="11" prefix="PRE">
+        <Display lang="en"><![CDATA[Precision]]></Display>
+        <Model systemID="0832">
+          <Display lang="en"><![CDATA[7730]]></Display>
+        </Model>
+        <Model systemID="087D">
+          <Display lang="en"><![CDATA[5530]]></Display>
+        </Model>
+        <Model systemID="0871">
+          <Display lang="en"><![CDATA[Precision-3630-XL-Tower/3630]]></Display>
+        </Model>
+        <Model systemID="0872">
+          <Display lang="en"><![CDATA[Precision-3630-XL-Tower/3630]]></Display>
+        </Model>
+        <Model systemID="07BF">
+          <Display lang="en"><![CDATA[5520]]></Display>
+        </Model>
+        <Model systemID="08AC">
+          <Display lang="en"><![CDATA[5530-2-IN-1]]></Display>
+        </Model>
+        <Model systemID="0820">
+          <Display lang="en"><![CDATA[3530]]></Display>
+        </Model>
+        <Model systemID="07B0">
+          <Display lang="en"><![CDATA[7520]]></Display>
+        </Model>
+        <Model systemID="07B1">
+          <Display lang="en"><![CDATA[7720]]></Display>
+        </Model>
+        <Model systemID="07A9">
+          <Display lang="en"><![CDATA[3520]]></Display>
+        </Model>
+        <Model systemID="06D9">
+          <Display lang="en"><![CDATA[7510]]></Display>
+        </Model>
+        <Model systemID="06DA">
+          <Display lang="en"><![CDATA[7710]]></Display>
+        </Model>
+        <Model systemID="075D">
+          <Display lang="en"><![CDATA[5720-AIO]]></Display>
+        </Model>
+        <Model systemID="06E0">
+          <Display lang="en"><![CDATA[3510]]></Display>
+        </Model>
+        <Model systemID="06E5">
+          <Display lang="en"><![CDATA[5510]]></Display>
+        </Model>
+        <Model systemID="0831">
+          <Display lang="en"><![CDATA[7530]]></Display>
+        </Model>
+        <Model systemID="0873">
+          <Display lang="en"><![CDATA[Precision-3930-Rack/PRECISION-3930-XL-RACK]]></Display>
+        </Model>
+        <Model systemID="0738">
+          <Display lang="en"><![CDATA[Precision-5820-Tower/Precision-5820-XL-Tower]]></Display>
+        </Model>
+        <Model systemID="08B1">
+          <Display lang="en"><![CDATA[Precision-5820-Tower]]></Display>
+        </Model>
+        <Model systemID="073A">
+          <Display lang="en"><![CDATA[Precision-7920-Tower/Precision-7920-XL-Tower]]></Display>
+        </Model>
+        <Model systemID="0739">
+          <Display lang="en"><![CDATA[Precision-7820-XL-Tower/Precision-7820-Tower]]></Display>
+        </Model>
+      </Brand>
+      <Brand key="1" prefix="OP">
+        <Display lang="en"><![CDATA[Optiplex]]></Display>
+        <Model systemID="079E">
+          <Display lang="en"><![CDATA[3050-AIO]]></Display>
+        </Model>
+        <Model systemID="079D">
+          <Display lang="en"><![CDATA[5250-AIO]]></Display>
+        </Model>
+        <Model systemID="07A2">
+          <Display lang="en"><![CDATA[5050]]></Display>
+        </Model>
+        <Model systemID="079C">
+          <Display lang="en"><![CDATA[7450-AIO]]></Display>
+        </Model>
+        <Model systemID="06C6">
+          <Display lang="en"><![CDATA[3240-AIO]]></Display>
+        </Model>
+        <Model systemID="06C5">
+          <Display lang="en"><![CDATA[7440-AIO]]></Display>
+        </Model>
+        <Model systemID="085A">
+          <Display lang="en"><![CDATA[7060]]></Display>
+        </Model>
+        <Model systemID="085D">
+          <Display lang="en"><![CDATA[7060]]></Display>
+        </Model>
+      </Brand>
+    </SupportedSystems>
+    <ImportantInfo URL="http://www.dell.com/support/home/us/en/19/Drivers/DriversDetails?driverId=DJT82" />
+    <Criticality value="2">
+      <Display lang="en"><![CDATA[Urgent]]></Display>
+    </Criticality>
+  </SoftwareComponent>
+</Manifest>

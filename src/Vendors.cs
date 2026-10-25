@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace DriverUpdater
 {
@@ -195,6 +196,92 @@ namespace DriverUpdater
     }
 
     // ---------------------------------------------------------------- ASUS
+    /// <summary>Dell (including Alienware) - the Dell Update Package catalog that Dell Command | Update uses.</summary>
+    public static class Dell
+    {
+        public const string IndexUrl = "https://downloads.dell.com/catalog/CatalogIndexPC.cab";
+
+        static XmlDocument Load(string xml)
+        {
+            var doc = new XmlDocument { XmlResolver = null };
+            using (var r = XmlReader.Create(new System.IO.StringReader(xml.TrimStart('\uFEFF')), new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }))
+                doc.Load(r);
+            return doc;
+        }
+
+        /// <summary>The model's own catalog (path under downloads.dell.com) for a Dell system ID such as "0B0B", or null.</summary>
+        public static string ModelCatalogPath(string indexXml, string systemId)
+        {
+            if (string.IsNullOrWhiteSpace(systemId)) return null;
+            var doc = Load(indexXml);
+            foreach (XmlElement g in doc.GetElementsByTagName("GroupManifest"))
+            {
+                bool hit = false;
+                foreach (XmlElement m in g.GetElementsByTagName("Model"))
+                    if (string.Equals(m.GetAttribute("systemID"), systemId.Trim(), StringComparison.OrdinalIgnoreCase)) { hit = true; break; }
+                if (!hit) continue;
+                foreach (XmlElement mi in g.GetElementsByTagName("ManifestInformation"))
+                {
+                    string path = mi.GetAttribute("path");
+                    if (path.Length > 0) return path.TrimStart('/');
+                }
+            }
+            return null;
+        }
+
+        static string Display(XmlElement e, string child)
+        {
+            foreach (XmlElement c in e.ChildNodes.OfType<XmlElement>().Where(x => x.Name == child))
+                foreach (XmlElement d in c.GetElementsByTagName("Display")) return d.InnerText.Trim();
+            return "";
+        }
+
+        /// <summary>Driver packages from a Dell catalog for this Windows version (64-bit), with the PCI hardware IDs they are for.</summary>
+        public static List<VendorPackage> Parse(string xml, bool win11, string systemId = null)
+        {
+            var doc = Load(xml);
+            var root = doc.DocumentElement;
+            string host = root != null && root.GetAttribute("baseLocation").Length > 0 ? root.GetAttribute("baseLocation") : "downloads.dell.com";
+            host = Regex.Replace(host, "^https?://", "").TrimEnd('/');
+            string want = win11 ? "Windows 11" : "Windows 10";
+            var list = new List<VendorPackage>();
+            foreach (XmlElement c in doc.GetElementsByTagName("SoftwareComponent"))
+            {
+                var type = c.ChildNodes.OfType<XmlElement>().FirstOrDefault(x => x.Name == "ComponentType");
+                if (type == null || type.GetAttribute("value") != "DRVR") continue;
+                bool osOk = c.GetElementsByTagName("OperatingSystem").OfType<XmlElement>().Any(o =>
+                    string.Equals(o.GetAttribute("osArch"), "x64", StringComparison.OrdinalIgnoreCase) &&
+                    Regex.IsMatch(o.InnerText.Trim(), "^" + want + @"(\s+64-bit)?(\s+(Home|Pro|Enterprise|Education))?\s*$", RegexOptions.IgnoreCase));
+                if (!osOk) continue;
+                if (!string.IsNullOrEmpty(systemId))
+                {
+                    var models = c.GetElementsByTagName("Model").OfType<XmlElement>().Select(m => m.GetAttribute("systemID")).ToList();
+                    if (models.Count > 0 && !models.Any(m => string.Equals(m, systemId, StringComparison.OrdinalIgnoreCase))) continue;
+                }
+                var ids = new List<string>();
+                foreach (XmlElement pci in c.GetElementsByTagName("PCIInfo"))
+                {
+                    string ven = pci.GetAttribute("vendorID"), dev = pci.GetAttribute("deviceID");
+                    if (ven.Length != 4 || dev.Length != 4) continue;
+                    string id = "PCI\\VEN_" + ven.ToUpperInvariant() + "&DEV_" + dev.ToUpperInvariant();
+                    string sd = pci.GetAttribute("subDeviceID"), sv = pci.GetAttribute("subVendorID");
+                    if (sd.Length == 4 && sv.Length == 4) id += "&SUBSYS_" + (sd + sv).ToUpperInvariant();
+                    if (!ids.Contains(id)) ids.Add(id);
+                }
+                if (ids.Count == 0) continue;     // only drivers Dell ties to exact hardware IDs
+                string path = c.GetAttribute("path").TrimStart('/');
+                long size; long.TryParse(c.GetAttribute("size"), out size);
+                list.Add(new VendorPackage
+                {
+                    Source = "Dell", Title = Display(c, "Name"), Version = c.GetAttribute("vendorVersion"),
+                    Url = "https://" + host + "/" + path, Size = size > 0 ? Util.FormatSize(size) : "",
+                    Date = c.GetAttribute("releaseDate"), HardwareIds = ids.ToArray()
+                });
+            }
+            return list;
+        }
+    }
+
     public static class Asus
     {
         /// <summary>"GU605MI.312" -> "GU605MI"</summary>

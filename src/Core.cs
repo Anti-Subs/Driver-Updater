@@ -11,6 +11,80 @@ using System.Text.RegularExpressions;
 namespace DriverUpdater
 {
     /// <summary>One installed driver found on this PC.</summary>
+    /// <summary>Light / dark colours. The app is designed in light colours; in dark mode each one is swapped for its dark partner.</summary>
+    public static class Theme
+    {
+        public static bool Dark;
+        public const string CardDark = "#1A1D24";
+        static readonly Dictionary<string, string> Map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // surfaces and borders
+            {"#F4F6FB","#0F1117"}, {"#FFFFFF",CardDark}, {"#F9FAFB","#20232B"}, {"#F3F4F6","#2A2E37"}, {"#F1F5F9","#2A2E37"},
+            {"#E5E7EB","#2E333D"}, {"#D1D5DB","#3A404B"},
+            // text
+            {"#111827","#F3F4F6"}, {"#1F2937","#E5E7EB"}, {"#0F172A","#F1F5F9"}, {"#374151","#D1D5DB"}, {"#4B5563","#B4BCC8"},
+            {"#475569","#AAB4C3"}, {"#6B7280","#9AA3B2"}, {"#9CA3AF","#7D8696"},
+            // blue
+            {"#2563EB","#3B82F6"}, {"#1D4ED8","#93C5FD"}, {"#1E40AF","#60A5FA"}, {"#1E3A8A","#BFDBFE"}, {"#3B82F6","#60A5FA"},
+            {"#EFF6FF","#172036"}, {"#DBEAFE","#1C2B4A"}, {"#BFDBFE","#1E3A6E"}, {"#93C5FD","#2F5DA8"},
+            {"#E0F2FE","#0F2A3A"}, {"#0369A1","#7DD3FC"}, {"#0284C7","#38BDF8"},
+            {"#EEF2FF","#1C1F3A"}, {"#E0E7FF","#252A52"}, {"#4F46E5","#818CF8"}, {"#4338CA","#A5B4FC"},
+            // green, amber, red, pink, purple
+            {"#DCFCE7","#12301F"}, {"#15803D","#4ADE80"}, {"#16A34A","#4ADE80"}, {"#ECFDF5","#0F2A21"}, {"#059669","#34D399"}, {"#047857","#6EE7B7"},
+            {"#FEF3C7","#33280F"}, {"#B45309","#FBBF24"},
+            {"#FEE2E2","#3A1717"}, {"#B91C1C","#F87171"}, {"#DC2626","#F87171"}, {"#FEF2F2","#2E1515"}, {"#FCA5A5","#7F2D2D"},
+            {"#FCE7F3","#3A1830"}, {"#DB2777","#F472B6"}, {"#F5F3FF","#221B3A"}, {"#7C3AED","#A78BFA"},
+        };
+
+        /// <summary>The colour to use for a light-theme colour.</summary>
+        public static string C(string hex)
+        {
+            string v;
+            return Dark && hex != null && Map.TryGetValue(hex, out v) ? v : hex;
+        }
+
+        /// <summary>Swaps the colours inside window markup (attribute values like "#111827" and white backgrounds).</summary>
+        public static string Apply(string xaml)
+        {
+            if (!Dark) return xaml;
+            xaml = Regex.Replace(xaml, @"(?<=(Background|BorderBrush|Fill)="")White(?="")", CardDark);
+            xaml = Regex.Replace(xaml, @"(?<=Property=""(Background|BorderBrush)""\s+Value="")White(?="")", CardDark);
+            return Regex.Replace(xaml, @"(?<="")#[0-9A-Fa-f]{6}(?="")", m => C(m.Value));
+        }
+
+        /// <summary>"auto" follows Windows' app setting (Settings > Personalisation > Colours).</summary>
+        public static bool ShouldBeDark(string pref, bool systemDark)
+        {
+            if (string.Equals(pref, "dark", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(pref, "light", StringComparison.OrdinalIgnoreCase)) return false;
+            return systemDark;
+        }
+    }
+
+    /// <summary>One driver source shown on the About page.</summary>
+    public class SourceInfo
+    {
+        public string Name { get; set; }
+        public string Desc { get; set; }
+        public string BadgeVisibility { get; set; }
+
+        /// <summary>Every source the app checks. Add new makers' catalogs here so they show on the About page.</summary>
+        public static List<SourceInfo> All(string pcMaker, string gpus, string cpu)
+        {
+            Func<string, string, bool> m = (text, pattern) => Regex.IsMatch(text ?? "", pattern, RegexOptions.IgnoreCase);
+            Func<string, string, bool, SourceInfo> S = (n, d, used) => new SourceInfo { Name = n, Desc = d, BadgeVisibility = used ? "Visible" : "Collapsed" };
+            return new List<SourceInfo>
+            {
+                S("Windows Update", "Microsoft-signed drivers that Windows offers for your hardware.", true),
+                S("Microsoft Update Catalog", "Microsoft's full driver catalog, checked device by device.", true),
+                S("NVIDIA", "GeForce and RTX graphics drivers from NVIDIA's official driver service (installed driver-only).", m(gpus, "NVIDIA")),
+                S("Intel", "Graphics, Wi-Fi, Bluetooth and NPU drivers from Intel's Driver & Support Assistant feed.", m(gpus + " " + cpu, "Intel")),
+                S("ASUS", "Drivers made for your exact ASUS laptop model, from ASUS's support site.", m(pcMaker, "ASUS")),
+                S("Dell and Alienware", "Dell Update Packages for your exact Dell or Alienware model - the catalog Dell Command | Update uses.", m(pcMaker, "Dell|Alienware")),
+            };
+        }
+    }
+
     public class DeviceInfo
     {
         public string Key, Name, Manufacturer, Class, Version, Provider, Hint;
@@ -162,7 +236,7 @@ namespace DriverUpdater
             if (Regex.IsMatch(text, "NVIDIA", RegexOptions.IgnoreCase)) return "NVIDIA app";
             if (Regex.IsMatch(text, "Intel", RegexOptions.IgnoreCase)) return "Intel Driver & Support Assistant";
             if (Regex.IsMatch(text, "AMD|Radeon", RegexOptions.IgnoreCase)) return "AMD Software";
-            if (Regex.IsMatch(pcMaker, "Dell", RegexOptions.IgnoreCase)) return "Dell SupportAssist";
+            if (Regex.IsMatch(pcMaker, "Dell|Alienware", RegexOptions.IgnoreCase)) return "Dell SupportAssist";
             if (Regex.IsMatch(pcMaker, "HP|Hewlett", RegexOptions.IgnoreCase)) return "HP Support Assistant";
             if (Regex.IsMatch(pcMaker, "Lenovo", RegexOptions.IgnoreCase)) return "Lenovo Vantage";
             if (asus) return "MyASUS";
@@ -265,8 +339,9 @@ namespace DriverUpdater
         public string Name { get; set; }
         public string Manufacturer { get; set; }
         public string Glyph { get; set; }
-        public string IconBack { get; set; }
-        public string IconFore { get; set; }
+        string _iconBack, _iconFore;
+        public string IconBack { get { return _iconBack; } set { _iconBack = Theme.C(value); } }
+        public string IconFore { get { return _iconFore; } set { _iconFore = Theme.C(value); } }
         public string Kind { get; set; }
 
         string _installed; public string Installed { get { return _installed; } set { Set(ref _installed, value, "Installed"); } }
@@ -278,12 +353,12 @@ namespace DriverUpdater
         string _check = "Hidden"; public string CheckVisibility { get { return _check; } set { Set(ref _check, value, "CheckVisibility"); } }
         bool _isChecked; public bool IsChecked { get { return _isChecked; } set { Set(ref _isChecked, value, "IsChecked"); } }
         string _tagText; public string TagText { get { return _tagText; } set { Set(ref _tagText, value, "TagText"); } }
-        string _tagBack = "#F3F4F6"; public string TagBack { get { return _tagBack; } set { Set(ref _tagBack, value, "TagBack"); } }
-        string _tagFore = "#6B7280"; public string TagFore { get { return _tagFore; } set { Set(ref _tagFore, value, "TagFore"); } }
+        string _tagBack = Theme.C("#F3F4F6"); public string TagBack { get { return _tagBack; } set { Set(ref _tagBack, value, "TagBack"); } }
+        string _tagFore = Theme.C("#6B7280"); public string TagFore { get { return _tagFore; } set { Set(ref _tagFore, value, "TagFore"); } }
         string _spin = "Collapsed"; public string SpinVisibility { get { return _spin; } set { Set(ref _spin, value, "SpinVisibility"); } }
         string _new = "Collapsed"; public string NewVisibility { get { return _new; } set { Set(ref _new, value, "NewVisibility"); } }
         string _accent = "Collapsed"; public string AccentVisibility { get { return _accent; } set { Set(ref _accent, value, "AccentVisibility"); } }
-        string _border = "#E5E7EB"; public string CardBorder { get { return _border; } set { Set(ref _border, value, "CardBorder"); } }
+        string _border = Theme.C("#E5E7EB"); public string CardBorder { get { return _border; } set { Set(ref _border, Theme.C(value), "CardBorder"); } }
         double _opacity = 1.0; public double RowOpacity { get { return _opacity; } set { Set(ref _opacity, value, "RowOpacity"); } }
         string _btnText; public string ButtonText { get { return _btnText; } set { Set(ref _btnText, value, "ButtonText"); } }
         string _btnTag; public string ButtonTag { get { return _btnTag; } set { Set(ref _btnTag, value, "ButtonTag"); } }
@@ -291,7 +366,7 @@ namespace DriverUpdater
         string _reVis = "Collapsed"; public string ReinstallVisibility { get { return _reVis; } set { Set(ref _reVis, value, "ReinstallVisibility"); } }
         bool _btnEnabled = true; public bool ButtonEnabled { get { return _btnEnabled; } set { Set(ref _btnEnabled, value, "ButtonEnabled"); } }
 
-        public void SetTag(string text, string back, string fore) { TagText = text; TagBack = back; TagFore = fore; }
+        public void SetTag(string text, string back, string fore) { TagText = text; TagBack = Theme.C(back); TagFore = Theme.C(fore); }
 
         /// <summary>Applies one visual state to the row.</summary>
         public void ApplyState(string state, ScanResult r, bool busy)

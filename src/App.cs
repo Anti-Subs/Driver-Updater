@@ -33,7 +33,25 @@ namespace DriverUpdater
         public static dynamic Load(string xaml)
         {
             var reader = Type.GetType("System.Windows.Markup.XamlReader" + PF, true);
-            return reader.GetMethod("Parse", new[] { typeof(string) }).Invoke(null, new object[] { xaml });
+            dynamic w = reader.GetMethod("Parse", new[] { typeof(string) }).Invoke(null, new object[] { Theme.Apply(xaml) });
+            if (Theme.Dark) DarkTitleBar((object)w);
+            return w;
+        }
+
+        [System.Runtime.InteropServices.DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+        /// <summary>Dark window title bar (Windows 10 20H1+ and Windows 11).</summary>
+        static void DarkTitleBar(object window)
+        {
+            try
+            {
+                var helperType = Type.GetType("System.Windows.Interop.WindowInteropHelper" + PF, true);
+                dynamic helper = Activator.CreateInstance(helperType, window);
+                IntPtr h = helper.EnsureHandle();
+                int on = 1;
+                if (DwmSetWindowAttribute(h, 20, ref on, 4) != 0) DwmSetWindowAttribute(h, 19, ref on, 4);
+            }
+            catch (Exception ex) { Log.Write("Dark title bar not available: " + ex.Message); }
         }
 
         public static dynamic Vis(bool visible) { return Enum.Parse(VisibilityType, visible ? "Visible" : "Collapsed"); }
@@ -41,6 +59,7 @@ namespace DriverUpdater
 
         public static dynamic Brush(string hex)
         {
+            hex = Theme.C(hex);
             object b;
             if (!Brushes.TryGetValue(hex, out b)) { b = ((dynamic)BrushConv).ConvertFromString(hex); Brushes[hex] = b; }
             return b;
@@ -85,6 +104,8 @@ namespace DriverUpdater
     public static class App
     {
         public static readonly string Version = typeof(App).Assembly.GetName().Version.ToString(3);
+        /// <summary>Set when the main window closes only to reopen (e.g. to switch light/dark).</summary>
+        public static bool Reopen;
 
         /// <summary>Run by a newly downloaded installer: wait for the old app to close, install over it, reopen it.</summary>
         static int FinishSelfUpdate(string[] args)
@@ -132,8 +153,13 @@ namespace DriverUpdater
                     return 0;
                 }
                 if (args.Length > 0 && args[0].Equals("/update", StringComparison.OrdinalIgnoreCase)) return FinishSelfUpdate(args);
-                if (Path.GetFileName(self).StartsWith("DriverUpdaterSetup", StringComparison.OrdinalIgnoreCase)) { new SetupWindow().Show(); return 0; }
-                new MainWindow().Show();
+                if (Path.GetFileName(self).StartsWith("DriverUpdaterSetup", StringComparison.OrdinalIgnoreCase)) { Settings.ApplyTheme(); new SetupWindow().Show(); return 0; }
+                do
+                {
+                    Reopen = false;
+                    Settings.ApplyTheme();
+                    new MainWindow().Show();
+                } while (Reopen);
                 return 0;
             }
             catch (Exception ex)
@@ -325,6 +351,18 @@ namespace DriverUpdater
             Wpf.On(O("BtnUpdLater"), "Click", (s, e) => { if (appRelease != null) SelfUpdate.Dismiss(appRelease.Version); E("UpdateBanner").Visibility = Wpf.Vis(false); });
             Wpf.On(O("BtnUpdNotes"), "Click", (s, e) => ShowAppNotes());
             Wpf.On(O("BtnCheckApp"), "Click", (s, e) => CheckAppUpdate(true));
+            Wpf.On(O("BtnThemeAuto"), "Click", (s, e) => SetAppearance("auto"));
+            Wpf.On(O("BtnThemeLight"), "Click", (s, e) => SetAppearance("light"));
+            Wpf.On(O("BtnThemeDark"), "Click", (s, e) => SetAppearance("dark"));
+            ShowAppearance();
+            Microsoft.Win32.UserPreferenceChangedEventHandler follow = (s, e) =>
+            {
+                if (Settings.Get("appearance", "auto") != "auto") return;
+                if (Settings.SystemDark() == Theme.Dark) return;
+                Post(() => { if (!busy) ReopenWindow(); });
+            };
+            Microsoft.Win32.SystemEvents.UserPreferenceChanged += follow;
+            Wpf.On((object)win, "Closed", (s, e) => Microsoft.Win32.SystemEvents.UserPreferenceChanged -= follow);
 
             Action<object, EventArgs> cardClick = (s, e) =>
             {
@@ -349,7 +387,8 @@ namespace DriverUpdater
             });
             Wpf.On((object)win, "ContentRendered", (s, e) => win.Activate());
 
-            ShowPage("Drivers");
+            ShowPage(reopenPage ?? "Drivers");
+            reopenPage = null;
             SetScanButton();
             FitToScreen();
             StartInventory();          // starts reading drivers while the window is still opening
@@ -373,8 +412,12 @@ namespace DriverUpdater
         }
 
         // ---------------------------------------------------------------- page + header
+        static string reopenPage;
+        string currentPage = "Drivers";
+
         void ShowPage(string name)
         {
+            currentPage = name;
             foreach (var p in new[] { "Drivers", "Tools", "About" })
             {
                 bool on = p == name;
@@ -596,12 +639,17 @@ namespace DriverUpdater
             });
 
             // 2) Manufacturer sites, all at once (a few seconds)
-            Post(() => { ScanBar(true, "Checking manufacturer websites", "ASUS, NVIDIA and Intel...", ""); Progress(E("ScanProgress"), 0, 1, true); });
             var checks = new List<KeyValuePair<string, Func<Dictionary<string, ScanResult>>>>();
             if (System.Text.RegularExpressions.Regex.IsMatch(pcMaker ?? "", "ASUS", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                 checks.Add(new KeyValuePair<string, Func<Dictionary<string, ScanResult>>>("ASUS", () => VendorNet.CheckAsus(devices, win11)));
+            if (System.Text.RegularExpressions.Regex.IsMatch(pcMaker ?? "", "Dell|Alienware", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                checks.Add(new KeyValuePair<string, Func<Dictionary<string, ScanResult>>>("Dell", () => VendorNet.CheckDell(devices, win11)));
             checks.Add(new KeyValuePair<string, Func<Dictionary<string, ScanResult>>>("NVIDIA", () => VendorNet.CheckNvidia(devices, win11)));
             checks.Add(new KeyValuePair<string, Func<Dictionary<string, ScanResult>>>("Intel", () => VendorNet.CheckIntel(devices)));
+            string makers = string.Join(", ", checks.Select(c => c.Key));
+            int lastComma = makers.LastIndexOf(", ", StringComparison.Ordinal);
+            if (lastComma > 0) makers = makers.Substring(0, lastComma) + " and " + makers.Substring(lastComma + 2);
+            Post(() => { ScanBar(true, "Checking manufacturer websites", makers + "...", ""); Progress(E("ScanProgress"), 0, 1, true); });
             var vendorTasks = checks.Select(c => System.Threading.Tasks.Task.Run(() =>
             {
                 try { return c.Value(); }
@@ -917,10 +965,11 @@ namespace DriverUpdater
                 new ToolDef { Name = "NVIDIA app", Desc = "Game Ready and Studio drivers for NVIDIA GeForce graphics.", Url = "https://www.nvidia.com/en-us/software/nvidia-app/", Match = m(gpus, "NVIDIA"), Look = new[] { g(0xE7F4), "#ECFDF5", "#15803D" } },
                 new ToolDef { Name = "MyASUS / Armoury Crate", Desc = "ASUS-tuned audio, power, fan and platform drivers made for your exact laptop model.", Url = "https://www.asus.com/support/download-center/", Match = m(pcMaker, "ASUS"), Look = new[] { g(0xE7F8), "#F1F5F9", "#0F172A" } },
                 new ToolDef { Name = "AMD Software: Adrenalin Edition", Desc = "Drivers for AMD Radeon graphics and Ryzen chipsets.", Url = "https://www.amd.com/en/support/download/drivers.html", Match = m(gpus + " " + cpu, "AMD|Radeon"), Look = new[] { g(0xE7F4), "#FEF2F2", "#B91C1C" } },
-                new ToolDef { Name = "Dell SupportAssist", Desc = "Drivers and BIOS updates for Dell PCs.", Url = "https://www.dell.com/support/home/drivers", Match = m(pcMaker, "Dell"), Look = new[] { g(0xE7F8), "#EFF6FF", "#1D4ED8" } },
+                new ToolDef { Name = "Dell SupportAssist", Desc = "Drivers and BIOS updates for Dell and Alienware PCs.", Url = "https://www.dell.com/support/home/drivers", Match = m(pcMaker, "Dell|Alienware"), Look = new[] { g(0xE7F8), "#EFF6FF", "#1D4ED8" } },
                 new ToolDef { Name = "HP Support Assistant", Desc = "Drivers and BIOS updates for HP PCs.", Url = "https://support.hp.com/drivers", Match = m(pcMaker, "HP|Hewlett"), Look = new[] { g(0xE7F8), "#EFF6FF", "#0369A1" } },
                 new ToolDef { Name = "Lenovo Vantage", Desc = "Drivers and BIOS updates for Lenovo PCs.", Url = "https://pcsupport.lenovo.com", Match = m(pcMaker, "Lenovo"), Look = new[] { g(0xE7F8), "#FEF2F2", "#B91C1C" } },
             }.OrderBy(t => t.Match ? 0 : 1).ToList();
+            E("ListSources").ItemsSource = SourceInfo.All(pcMaker, gpus, cpu);
             tools.Clear();
             for (int i = 0; i < toolDefs.Count; i++)
             {
@@ -973,6 +1022,32 @@ namespace DriverUpdater
                 }
             }
             Sys.OpenUrl(d.Url);
+        }
+
+        // ---------------------------------------------------------------- appearance
+        void ShowAppearance()
+        {
+            string pref = Settings.Get("appearance", "auto");
+            foreach (var kv in new[] { new[] { "auto", "BtnThemeAuto" }, new[] { "light", "BtnThemeLight" }, new[] { "dark", "BtnThemeDark" } })
+                E(kv[1]).Style = win.FindResource(kv[0] == pref ? "PrimaryButton" : "OutlineButton");
+        }
+
+        void SetAppearance(string pref)
+        {
+            Settings.Set("appearance", pref);
+            ShowAppearance();
+            if (Theme.ShouldBeDark(pref, Settings.SystemDark()) == Theme.Dark) return;
+            if (busy) { Native.Ask("The new look is applied when the current scan or install finishes and you reopen Driver Updater.", "Driver Updater", Native.OK, Native.INFO); return; }
+            ReopenWindow();
+        }
+
+        /// <summary>Rebuilds the window (same app, no restart): used to switch between light and dark.</summary>
+        void ReopenWindow()
+        {
+            if (lastScan.HasValue) ScanStore.Save(lastScan.Value, list.Data.Values);
+            App.Reopen = true;
+            reopenPage = currentPage;
+            win.Close();
         }
 
         // ---------------------------------------------------------------- app updates
