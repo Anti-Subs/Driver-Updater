@@ -217,7 +217,19 @@ namespace DriverUpdater
           <RowDefinition Height=""Auto""/>
         </Grid.RowDefinitions>
 
-        <DockPanel Margin=""36,28,36,10"">
+        <StackPanel>
+        <Border x:Name=""UpdateBanner"" Visibility=""Collapsed"" Background=""#EFF6FF"" BorderBrush=""#BFDBFE"" BorderThickness=""1"" CornerRadius=""10"" Margin=""36,20,36,0"" Padding=""14,10"">
+          <DockPanel>
+            <StackPanel x:Name=""UpdateBannerButtons"" DockPanel.Dock=""Right"" Orientation=""Horizontal"" VerticalAlignment=""Center"">
+              <Button x:Name=""BtnUpdNotes"" Content=""What's new"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,8,0""/>
+              <Button x:Name=""BtnUpdLater"" Content=""Later"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,8,0""/>
+              <Button x:Name=""BtnUpdNow"" Content=""Update now"" Style=""{StaticResource PrimaryButton}""/>
+            </StackPanel>
+            <TextBlock Text=""&#xE946;"" FontFamily=""Segoe MDL2 Assets"" FontSize=""16"" Foreground=""#2563EB"" VerticalAlignment=""Center"" Margin=""0,0,10,0""/>
+            <TextBlock x:Name=""UpdateBannerText"" Text="""" FontSize=""13.5"" FontWeight=""SemiBold"" Foreground=""#1E3A8A"" VerticalAlignment=""Center"" TextWrapping=""Wrap"" Margin=""0,0,12,0""/>
+          </DockPanel>
+        </Border>
+        <DockPanel Margin=""36,22,36,10"">
           <StackPanel DockPanel.Dock=""Right"" Orientation=""Horizontal"" VerticalAlignment=""Center"">
             <Button x:Name=""BtnScan"" Content=""Scan now"" Style=""{StaticResource PrimaryButton}"" Margin=""0,0,10,0""/>
             <Button x:Name=""BtnUpdateAll"" Content=""Update All"" Style=""{StaticResource PrimaryButton}"" Visibility=""Collapsed""/>
@@ -232,6 +244,7 @@ namespace DriverUpdater
             </StackPanel>
           </StackPanel>
         </DockPanel>
+        </StackPanel>
 
         <WrapPanel Grid.Row=""1"" Margin=""36,0,36,14"">
           <Border x:Name=""ChipUpd"" Style=""{StaticResource Chip}"" Visibility=""Collapsed"">
@@ -316,7 +329,10 @@ namespace DriverUpdater
         <ScrollViewer VerticalScrollBarVisibility=""Auto"">
         <StackPanel Margin=""36,30,36,24"" MaxWidth=""760"" HorizontalAlignment=""Left"">
           <TextBlock Text=""About Driver Updater"" FontSize=""24"" FontWeight=""SemiBold"" Foreground=""#111827""/>
-          <TextBlock x:Name=""AboutVersion"" Text=""Version"" Foreground=""#6B7280"" Margin=""0,6,0,22""/>
+          <StackPanel Orientation=""Horizontal"" Margin=""0,6,0,22"">
+            <TextBlock x:Name=""AboutVersion"" Text=""Version"" Foreground=""#6B7280"" VerticalAlignment=""Center""/>
+            <Button x:Name=""BtnCheckApp"" Content=""Check for updates"" Style=""{StaticResource OutlineButton}"" Margin=""14,0,0,0""/>
+          </StackPanel>
           <Border Background=""White"" CornerRadius=""12"" Padding=""22"" BorderBrush=""#E5E7EB"" BorderThickness=""1"">
             <StackPanel>
               <TextBlock Text=""Where drivers come from"" FontWeight=""SemiBold"" FontSize=""14"" Foreground=""#111827""/>
