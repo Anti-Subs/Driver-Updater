@@ -25,6 +25,15 @@ namespace DriverUpdater
         public bool Reboot;
         /// <summary>True for Microsoft sources (Windows Update / Update Catalog); false for manufacturer downloads.</summary>
         public bool IsMicrosoft { get { return Source == "Windows Update" || Source == "Microsoft Update Catalog"; } }
+        /// <summary>BIOS / system firmware updates (applied by the PC at the next restart).</summary>
+        public bool IsFirmware
+        {
+            get
+            {
+                return string.Equals(Class, "Firmware", StringComparison.OrdinalIgnoreCase)
+                    || Regex.IsMatch((Name ?? "") + " " + (Title ?? ""), @"\s-\s*Firmware\s*-|System Firmware", RegexOptions.IgnoreCase);
+            }
+        }
 
         /// <summary>Marks an offered update "Kept" when it is already in Windows' driver store, or Windows declined it before.</summary>
         public static void ApplyKeptTo(ScanResult r, ICollection<string> storeVersions, IDictionary<string, string> kept)
@@ -313,7 +322,8 @@ namespace DriverUpdater
                     PillVisibility = "Visible";
                     VersionLine = "Version: " + (string.IsNullOrEmpty(Installed) ? "not installed" : Installed) + "  >  " + r.Latest;
                     Size = r.Size ?? "";
-                    CheckVisibility = "Visible"; IsChecked = true;
+                    CheckVisibility = "Visible"; IsChecked = !r.IsFirmware;
+                    if (r.IsFirmware) Size = (Size.Length > 0 ? Size + "  |  " : "") + "BIOS update - not ticked by default. Keep the charger plugged in; it finishes during a restart";
                     ButtonText = "Update"; ButtonTag = "Update"; ButtonVisibility = "Visible";
                     AccentVisibility = "Visible"; CardBorder = "#FCA5A5";
                     break;

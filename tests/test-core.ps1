@@ -44,6 +44,15 @@ $rr=[DriverUpdater.ScanResult]::new(); $rr.Reboot=$true
 $it.ApplyState('Reinstalled', $rr, $false); Check 'reinstalled tag' ($it.TagText -eq 'Reinstalled - restart to finish' -and $it.ReinstallVisibility -eq 'Visible')
 $it.Installed=''; $it.ApplyState('Ok', $null, $false); Check 'no reinstall without a driver' ($it.ReinstallVisibility -eq 'Collapsed')
 
+"Firmware"
+$fw=[DriverUpdater.ScanResult]::new(); $fw.Name='ASUSTeK COMPUTER INC. - Firmware - 10.1.2.309'; $fw.Source='Windows Update'; $fw.Latest='10.1.2.309'; $fw.Class=''
+Check 'firmware detected by title' $fw.IsFirmware
+$fw2=[DriverUpdater.ScanResult]::new(); $fw2.Name='X'; $fw2.Class='Firmware'; Check 'firmware detected by class' $fw2.IsFirmware
+$nf=[DriverUpdater.ScanResult]::new(); $nf.Name='Intel(R) Wi-Fi 6 AX200 160MHz'; $nf.Class='NET'; Check 'wifi not firmware' (-not $nf.IsFirmware)
+$it2 = [DriverUpdater.DriverItem]::new(); $it2.Name=$fw.Name; $it2.Installed=''
+$it2.ApplyState('Update', $fw, $false); Check 'firmware not ticked by default' (-not $it2.IsChecked -and $it2.Size -like '*BIOS update*')
+$it2.ApplyState('Update', $nf, $false); Check 'normal update ticked' ($it2.IsChecked)
+
 "Driver list"
 $L = [DriverUpdater.DriverList]::new()
 foreach ($n in 'Audio','Camera','Touch','Wifi') { $d = [DriverUpdater.DeviceInfo]::new(); $d.Key="K:$n"; $d.Name=$n; $d.Manufacturer='M'; $d.Class='MEDIA'; $d.Version=@{Audio='6.0.1';Camera='10.0';Touch='16.0';Wifi='24.5'}[$n]; $L.Inventory.Add($d) }

@@ -271,6 +271,15 @@ namespace DriverUpdater
             E("AboutVersion").Text = "Version " + App.Version;
             E("ListChanges").ItemsSource = Changelog.Entries(App.Version);
             E("ListDrivers").ItemsSource = list.Rows;
+            list.Rows.CollectionChanged += (s, e) =>
+            {
+                if (e.NewItems == null) return;
+                foreach (var o in e.NewItems)
+                {
+                    var row = o as DriverItem;
+                    if (row != null) row.PropertyChanged += (o2, a) => { if (a.PropertyName == "IsChecked" && mode != "loading") Post(UpdateHeader); };
+                }
+            };
             E("ListTools").ItemsSource = tools;
 
             Wpf.On(O("NavDrivers"), "Click", (s, e) => ShowPage("Drivers"));
@@ -408,7 +417,9 @@ namespace DriverUpdater
                 : "Never scanned";
             E("UpdateBadgeText").Text = nUpd.ToString(CultureInfo.InvariantCulture);
             E("UpdateBadge").Visibility = Wpf.Vis(nUpd > 0);
-            E("BtnUpdateAll").Content = "Update All (" + nUpd + ")";
+            int nUpdRows = list.Count("Update");
+            int nSel = list.Rows.OfType<DriverItem>().Count(i => i.State == "Update" && i.IsChecked);
+            E("BtnUpdateAll").Content = nSel == nUpdRows ? "Update All (" + nUpd + ")" : "Update selected (" + nSel + ")";
             E("BtnUpdateAll").Visibility = Wpf.Vis(nUpd > 0 && mode != "scanning");
         }
 
@@ -679,9 +690,25 @@ namespace DriverUpdater
         {
             targets = targets.Where(t => t.State == "Update").ToList();
             if (targets.Count == 0) { Native.Ask("Tick at least one driver to update.", "Driver Updater", Native.OK, Native.INFO); return; }
+            var firmware = targets.Where(t => list.Data[t.Key].IsFirmware).ToList();
+            if (firmware.Count > 0)
+            {
+                bool onBattery = false;
+                try { onBattery = System.Windows.Forms.SystemInformation.PowerStatus.PowerLineStatus == System.Windows.Forms.PowerLineStatus.Offline; } catch { }
+                if (onBattery)
+                {
+                    Native.Ask("Plug in the charger before installing a BIOS / firmware update.\n\nThe PC refuses to update its firmware on battery, and a power cut during the update can leave it unable to start." +
+                               (targets.Count > firmware.Count ? "\n\nThe other drivers will be installed now." : ""), "Driver Updater", Native.OK, Native.WARNING);
+                    targets = targets.Except(firmware).ToList();
+                    if (targets.Count == 0) return;
+                    firmware.Clear();
+                }
+            }
             if (!skipRestore)
             {
                 string names = string.Join("\n", targets.Take(8).Select(t => "  - " + t.Name));
+                if (firmware.Count > 0) names += "\n\nIncludes a BIOS / firmware update: Windows prepares it now and the PC finishes it during the next restart " +
+                                                 "(the screen may stay dark for a few minutes - don't turn it off). If BitLocker is on, keep your recovery key handy.";
                 if (targets.Count > 8) names += "\n  - and " + (targets.Count - 8) + " more";
                 if (Native.Ask("Install " + targets.Count + " driver update(s)?\n\n" + names + "\n\nA System Restore point will be created first.", "Driver Updater", Native.YESNO, Native.QUESTION) != Native.IDYES) return;
             }

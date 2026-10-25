@@ -245,14 +245,46 @@ namespace DriverUpdater
             if (!(bool)target.EulaAccepted) target.AcceptEula();
             dynamic coll = Activator.CreateInstance(Type.GetTypeFromProgID("Microsoft.Update.UpdateColl", true));
             coll.Add(target);
-            dynamic dl = session.CreateUpdateDownloader(); dl.Updates = coll; dl.Download();
-            dynamic inst = session.CreateUpdateInstaller(); inst.Updates = coll;
-            dynamic res = inst.Install();
-            int code = (int)res.GetUpdateResult(0).ResultCode;
+            dynamic res;
+            try
+            {
+                dynamic dl = session.CreateUpdateDownloader(); dl.Updates = coll;
+                dynamic dres = dl.Download();
+                int dcode = (int)dres.GetUpdateResult(0).ResultCode;
+                if (dcode != 2 && dcode != 3)
+                    return Tuple.Create(false, "Download failed: " + Explain((int)dres.GetUpdateResult(0).HResult, dcode), false);
+                dynamic inst = session.CreateUpdateInstaller(); inst.Updates = coll;
+                res = inst.Install();
+            }
+            catch (COMException ex) { Log.Write("Windows Update error 0x" + ex.HResult.ToString("X8") + ": " + ex.Message); return Tuple.Create(false, Explain(ex.HResult, 4), false); }
+            dynamic one = res.GetUpdateResult(0);
+            int code = (int)one.ResultCode;
             bool reboot = false;
-            try { reboot = (bool)res.RebootRequired || (bool)res.GetUpdateResult(0).RebootRequired; } catch { }
+            try { reboot = (bool)res.RebootRequired || (bool)one.RebootRequired; } catch { }
             bool ok = code == 2 || code == 3;
-            return Tuple.Create(ok, ok ? "Installed" : "Failed (code " + code + ")", reboot);
+            int hr = 0; try { hr = (int)one.HResult; } catch { }
+            if (!ok) Log.Write("Windows Update install result " + code + ", HRESULT 0x" + hr.ToString("X8"));
+            return Tuple.Create(ok, ok ? "Installed" : Explain(hr, code), reboot);
+        }
+
+        /// <summary>Plain-words reason for a Windows Update failure.</summary>
+        public static string Explain(int hr, int resultCode)
+        {
+            string hex = "0x" + hr.ToString("X8");
+            switch ((uint)hr)
+            {
+                case 0x80240016: return "Windows Update is busy installing something else, or waiting for a restart. Restart or let it finish, then try again";
+                case 0x80070BC9: case 0x8024A105: return "A restart is pending from an earlier update. Restart, then try again";
+                case 0x8024200B: case 0x80242016: return "The update's installer reported a failure (" + hex + "). For a BIOS update, plug in the charger and try again after a restart";
+                case 0x80240017: return "Windows says this update no longer applies to this PC";
+                case 0x800F020B: return "The device this update is for isn't connected";
+                case 0x80070005: return "Access denied (" + hex + ")";
+                case 0x80240022: case 0x8024001E: return "Windows Update stopped while installing (" + hex + "). Try again";
+                case 0x80070070: return "Not enough disk space";
+                case 0x80072EE2: case 0x80072EFD: case 0x80072EE7: case 0x80072F8F: return "Couldn't reach Windows Update (" + hex + "). Check the internet connection";
+            }
+            if (hr != 0) return "Windows Update couldn't install it (error " + hex + ")";
+            return resultCode == 5 ? "Windows Update cancelled the install" : "Windows Update couldn't install it";
         }
 
         static string Str(object o) { return o == null ? "" : Convert.ToString(o, CultureInfo.InvariantCulture); }
