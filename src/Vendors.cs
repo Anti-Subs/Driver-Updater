@@ -371,4 +371,64 @@ namespace DriverUpdater
             return best;
         }
     }
+
+    /// <summary>A published Driver Updater release on GitHub (what the app offers to update to).</summary>
+    public class AppRelease
+    {
+        public string Version, Notes, PageUrl, AssetName, AssetUrl, Digest;
+        public long Size;
+
+        static string S(Dictionary<string, object> d, string k) { object v; return d.TryGetValue(k, out v) && v != null ? Convert.ToString(v, CultureInfo.InvariantCulture) : ""; }
+
+        /// <summary>Reads GitHub's "latest release" answer. Null for drafts, pre-releases, or a release without the installer.</summary>
+        public static AppRelease Parse(string json)
+        {
+            var d = MiniJson.Parse(json) as Dictionary<string, object>;
+            if (d == null) return null;
+            if (S(d, "draft") == "True" || S(d, "prerelease") == "True") return null;
+            var vm = Regex.Match(S(d, "tag_name"), @"\d+\.\d+\.\d+");
+            if (!vm.Success) return null;
+            var r = new AppRelease { Version = vm.Value, Notes = S(d, "body"), PageUrl = S(d, "html_url") };
+            var assets = d.ContainsKey("assets") ? d["assets"] as List<object> : null;
+            if (assets == null) return null;
+            foreach (var o in assets)
+            {
+                var a = o as Dictionary<string, object>;
+                if (a == null) continue;
+                string name = S(a, "name"), url = S(a, "browser_download_url");
+                var m = Regex.Match(name, @"^DriverUpdaterSetup-(\d+\.\d+\.\d+)\.exe$", RegexOptions.IgnoreCase);
+                if (!m.Success || m.Groups[1].Value != r.Version) continue;
+                if (!url.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase)) continue;
+                r.AssetName = name; r.AssetUrl = url; r.Digest = S(a, "digest");
+                long size; long.TryParse(S(a, "size"), NumberStyles.Float, CultureInfo.InvariantCulture, out size); r.Size = size;
+                return r;
+            }
+            return null;
+        }
+
+        public static bool IsNewer(string candidate, string current)
+        {
+            var a = Util.ParseVersion(candidate); var b = Util.ParseVersion(current);
+            if (a == null || b == null) return false;
+            Func<Version, Version> n = v => new Version(v.Major, v.Minor, Math.Max(0, v.Build), Math.Max(0, v.Revision));
+            return n(a) > n(b);
+        }
+
+        /// <summary>Release notes as plain text for a message box.</summary>
+        public static string PlainNotes(string md, int max = 1200)
+        {
+            if (string.IsNullOrWhiteSpace(md)) return "";
+            var lines = md.Replace("\r", "").Split('\n').Select(l =>
+            {
+                string t = l.Trim();
+                t = Regex.Replace(t, @"^#+\s*", "");
+                t = Regex.Replace(t, @"^[-*+]\s+", "\u2022 ");
+                t = Regex.Replace(t, @"\*\*|__|`", "");
+                t = Regex.Replace(t, @"\[([^\]]+)\]\([^)]+\)", "$1");
+                return t;
+            });
+            string text = Regex.Replace(string.Join("\n", lines), @"\n{3,}", "\n\n").Trim();
+            return text.Length > max ? text.Substring(0, max - 3).TrimEnd() + "..." : text;
+        }
+    }
 }

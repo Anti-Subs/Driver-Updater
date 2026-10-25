@@ -15,6 +15,7 @@ namespace DriverUpdater
 
         public static string DefaultDir { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), AppName); } }
         static string StartMenuLink { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms), AppName + ".lnk"); } }
+        public static bool HasDesktopShortcut { get { return File.Exists(DesktopLink); } }
         static string DesktopLink { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), AppName + ".lnk"); } }
 
         /// <summary>Folder of the current installation, or null.</summary>

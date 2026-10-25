@@ -2,6 +2,10 @@
 
 A small native Windows app that scans a PC's drivers and installs newer versions from official sources only.
 
+**Download:** get `DriverUpdaterSetup-<version>.exe` from the [latest release](https://github.com/Anti-Subs/Driver-Updater/releases/latest).
+
+> This is a personal project. Contributions, pull requests and issues aren't accepted.
+
 - **Sources:** Windows Update, the Microsoft Update Catalog, and the official ASUS, NVIDIA and Intel driver services.
 - **Safe installs:** a System Restore point is created first; manufacturer installers must pass a Windows signature check;
   NVIDIA and Intel drivers install silently and driver-only (no NVIDIA app / Intel Graphics Software).
@@ -10,6 +14,15 @@ A small native Windows app that scans a PC's drivers and installs newer versions
   and Settings > Apps uninstalls it.
 
 Requires Windows 10 or 11 with .NET Framework 4.8 (built in). Administrator rights are needed to install drivers.
+
+## Publishing an update
+
+Installed copies check this repo's **latest release** (at most every 12 hours, or via About > Check for updates)
+and offer a one-click update. For a release to be picked up:
+
+- tag it `vX.Y.Z` (for example `v3.6.0`) and attach `DriverUpdaterSetup-X.Y.Z.exe` with the same version;
+- publish it (drafts and pre-releases are ignored, so they can be used for testing);
+- the release notes are shown in the app under "What's new".
 
 ## Repository layout
 

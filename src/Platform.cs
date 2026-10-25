@@ -706,6 +706,116 @@ namespace DriverUpdater
         }
     }
 
+    /// <summary>Checks GitHub for a newer Driver Updater and installs it.</summary>
+    public static class SelfUpdate
+    {
+        public const string Repo = "Anti-Subs/Driver-Updater";
+        public static string ReleasesPage { get { return "https://github.com/" + Repo + "/releases/latest"; } }
+        static string StateFile { get { return Path.Combine(Paths.StateDir, "app-update.json"); } }
+
+        static Dictionary<string, object> Load()
+        {
+            try { if (File.Exists(StateFile)) return (Json.Read(File.ReadAllText(StateFile)) as Dictionary<string, object>) ?? new Dictionary<string, object>(); }
+            catch { }
+            return new Dictionary<string, object>();
+        }
+
+        static void Save(Dictionary<string, object> st)
+        {
+            try { Directory.CreateDirectory(Paths.StateDir); File.WriteAllText(StateFile, Json.Write(st)); } catch (Exception ex) { Log.Write("Couldn't save update state: " + ex.Message); }
+        }
+
+        static string Get(Dictionary<string, object> st, string k) { object v; return st.TryGetValue(k, out v) && v != null ? v.ToString() : null; }
+
+        /// <summary>Latest published release (asks GitHub at most every 12 hours unless forced). Null if none or offline.</summary>
+        public static AppRelease Check(bool force)
+        {
+            var st = Load();
+            string cached = Get(st, "json");
+            DateTime last;
+            if (!force && cached != null && DateTime.TryParse(Get(st, "lastCheck"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out last)
+                && (DateTime.UtcNow - last).TotalHours < 12)
+                return Safe(cached);
+            try
+            {
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/" + Repo + "/releases/latest");
+                req.UserAgent = "DriverUpdater/" + App.Version;
+                req.Accept = "application/vnd.github+json";
+                req.Timeout = 15000;
+                string json;
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8)) json = rd.ReadToEnd();
+                st["lastCheck"] = DateTime.UtcNow.ToString("o"); st["json"] = json;
+                Save(st);
+                var r = Safe(json);
+                Log.Write("App update check: latest release " + (r != null ? r.Version : "none usable") + ", running " + App.Version);
+                return r;
+            }
+            catch (WebException ex)
+            {
+                var hr = ex.Response as HttpWebResponse;
+                if (hr != null && hr.StatusCode == HttpStatusCode.NotFound) { st["lastCheck"] = DateTime.UtcNow.ToString("o"); st.Remove("json"); Save(st); return null; }
+                Log.Write("App update check failed: " + ex.Message);
+                return cached != null ? Safe(cached) : null;
+            }
+        }
+
+        static AppRelease Safe(string json) { try { return AppRelease.Parse(json); } catch (Exception ex) { Log.Write("Release info unreadable: " + ex.Message); return null; } }
+
+        public static string Dismissed { get { return Get(Load(), "dismissed"); } }
+        public static void Dismiss(string version) { var st = Load(); st["dismissed"] = version; Save(st); }
+
+        /// <summary>Downloads the new installer and checks it really is that release. Returns its path.</summary>
+        public static string Download(AppRelease r, Action<int> percent)
+        {
+            string dir = Path.Combine(Paths.WorkDir, "app-update");
+            if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            Directory.CreateDirectory(dir);
+            string file = Path.Combine(dir, r.AssetName);
+            var req = (HttpWebRequest)WebRequest.Create(r.AssetUrl);
+            req.UserAgent = "DriverUpdater/" + App.Version;
+            req.Timeout = 30000; req.ReadWriteTimeout = 60000;
+            using (var resp = (HttpWebResponse)req.GetResponse())
+            {
+                var final = resp.ResponseUri;
+                if (final.Scheme != "https" || !(final.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) || final.Host.EndsWith(".githubusercontent.com", StringComparison.OrdinalIgnoreCase)))
+                    throw new InvalidOperationException("Unexpected download address: " + final.Host);
+                long total = resp.ContentLength > 0 ? resp.ContentLength : r.Size;
+                using (var src = resp.GetResponseStream())
+                using (var dst = File.Create(file))
+                {
+                    var buf = new byte[81920]; long got = 0; int n, lastPct = -1;
+                    while ((n = src.Read(buf, 0, buf.Length)) > 0)
+                    {
+                        dst.Write(buf, 0, n); got += n;
+                        int pct = total > 0 ? (int)(got * 100 / total) : 0;
+                        if (pct != lastPct) { lastPct = pct; percent(pct); }
+                    }
+                }
+            }
+            var len = new FileInfo(file).Length;
+            if (r.Size > 0 && len != r.Size) throw new InvalidOperationException("The download is incomplete (" + len + " of " + r.Size + " bytes)");
+            if (!string.IsNullOrEmpty(r.Digest) && r.Digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+            {
+                string want = r.Digest.Substring(7).Trim().ToLowerInvariant(), have;
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                using (var fs = File.OpenRead(file)) have = BitConverter.ToString(sha.ComputeHash(fs)).Replace("-", "").ToLowerInvariant();
+                if (have != want) throw new InvalidOperationException("The download doesn't match the published file (fingerprint mismatch)");
+            }
+            var fv = FileVersionInfo.GetVersionInfo(file);
+            if (!AppRelease.IsNewer(fv.FileVersion ?? "", App.Version) || !(fv.FileVersion ?? "").StartsWith(r.Version))
+                throw new InvalidOperationException("The downloaded file isn't Driver Updater " + r.Version);
+            Log.Write("Downloaded update " + r.Version + " (" + len + " bytes" + (string.IsNullOrEmpty(r.Digest) ? ", no published fingerprint" : ", fingerprint OK") + ")");
+            return file;
+        }
+
+        /// <summary>Starts the new installer in update mode; it waits for this app to close, installs, and reopens it.</summary>
+        public static void Apply(string setup)
+        {
+            Process.Start(new ProcessStartInfo(setup, "/update " + Process.GetCurrentProcess().Id) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(setup) });
+        }
+    }
+
     public static class DriverStore
     {
         /// <summary>All driver versions present in Windows' driver store (from "pnputil /enum-drivers").</summary>

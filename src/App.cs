@@ -86,6 +86,30 @@ namespace DriverUpdater
     {
         public static readonly string Version = typeof(App).Assembly.GetName().Version.ToString(3);
 
+        /// <summary>Run by a newly downloaded installer: wait for the old app to close, install over it, reopen it.</summary>
+        static int FinishSelfUpdate(string[] args)
+        {
+            int pid = 0;
+            if (args.Length > 1) int.TryParse(args[1], out pid);
+            Log.Write("Self-update to " + Version + " starting");
+            try
+            {
+                if (pid > 0) try { Process.GetProcessById(pid).WaitForExit(30000); } catch (ArgumentException) { }
+                string dir = Installer.InstalledDir() ?? Installer.DefaultDir;
+                string exe = Installer.Install(dir, Installer.HasDesktopShortcut, step => Log.Write("Update: " + step));
+                Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = dir });
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Write("Self-update failed: " + ex);
+                string self = Process.GetCurrentProcess().MainModule.FileName;
+                Native.Ask("Driver Updater couldn't finish updating to " + Version + ":\n\n" + ex.Message +
+                           "\n\nYou can run the installer yourself:\n" + self, "Driver Updater", Native.OK, Native.WARNING);
+                return 1;
+            }
+        }
+
         [STAThread]
         public static int Main(string[] args)
         {
@@ -107,6 +131,7 @@ namespace DriverUpdater
                     Installer.FinishUninstall(args.Length > 1 ? args[1] : null, pid);
                     return 0;
                 }
+                if (args.Length > 0 && args[0].Equals("/update", StringComparison.OrdinalIgnoreCase)) return FinishSelfUpdate(args);
                 if (Path.GetFileName(self).StartsWith("DriverUpdaterSetup", StringComparison.OrdinalIgnoreCase)) { new SetupWindow().Show(); return 0; }
                 new MainWindow().Show();
                 return 0;
@@ -296,6 +321,10 @@ namespace DriverUpdater
             Wpf.On(O("BtnLog"), "Click", (s, e) => { Directory.CreateDirectory(Paths.WorkDir); Sys.OpenUrl(Paths.WorkDir); });
             Wpf.On(O("BtnExport"), "Click", (s, e) => Export());
             Wpf.On(O("BtnOldUsb"), "Click", (s, e) => { if (!busy) CleanOldUsb(); });
+            Wpf.On(O("BtnUpdNow"), "Click", (s, e) => StartAppUpdate());
+            Wpf.On(O("BtnUpdLater"), "Click", (s, e) => { if (appRelease != null) SelfUpdate.Dismiss(appRelease.Version); E("UpdateBanner").Visibility = Wpf.Vis(false); });
+            Wpf.On(O("BtnUpdNotes"), "Click", (s, e) => ShowAppNotes());
+            Wpf.On(O("BtnCheckApp"), "Click", (s, e) => CheckAppUpdate(true));
 
             Action<object, EventArgs> cardClick = (s, e) =>
             {
@@ -324,6 +353,7 @@ namespace DriverUpdater
             SetScanButton();
             FitToScreen();
             StartInventory();          // starts reading drivers while the window is still opening
+            CheckAppUpdate(false);
             win.ShowDialog();
             Log.Write("Driver Updater closed.");
         }
@@ -943,6 +973,90 @@ namespace DriverUpdater
                 }
             }
             Sys.OpenUrl(d.Url);
+        }
+
+        // ---------------------------------------------------------------- app updates
+        AppRelease appRelease;
+        bool appUpdating;
+
+        void CheckAppUpdate(bool manual)
+        {
+            if (manual) E("BtnCheckApp").IsEnabled = false;
+            new Thread(() =>
+            {
+                AppRelease r = null;
+                try { r = SelfUpdate.Check(manual); } catch (Exception ex) { Log.Write("App update check error: " + ex.Message); }
+                Post(() =>
+                {
+                    if (manual) E("BtnCheckApp").IsEnabled = true;
+                    bool newer = r != null && AppRelease.IsNewer(r.Version, App.Version);
+                    if (newer && (manual || r.Version != SelfUpdate.Dismissed))
+                    {
+                        appRelease = r;
+                        E("UpdateBannerText").Text = "Driver Updater " + r.Version + " is available (you have " + App.Version + ").";
+                        E("UpdateBannerButtons").Visibility = Wpf.Vis(true);
+                        E("UpdateBanner").Visibility = Wpf.Vis(true);
+                        if (manual) { ShowPage("Drivers"); }
+                    }
+                    else if (manual)
+                    {
+                        if (r == null) Native.Ask("Couldn't check for updates right now. Check the internet connection, or see the releases page:\n" + SelfUpdate.ReleasesPage, "Driver Updater", Native.OK, Native.INFO);
+                        else Native.Ask("You have the latest version (" + App.Version + ").", "Driver Updater", Native.OK, Native.INFO);
+                    }
+                });
+            }) { IsBackground = true }.Start();
+        }
+
+        void ShowAppNotes()
+        {
+            if (appRelease == null) return;
+            string notes = AppRelease.PlainNotes(appRelease.Notes);
+            if (Native.Ask("What's new in Driver Updater " + appRelease.Version + ":\n\n" + (notes.Length > 0 ? notes : "(No notes were published for this version.)") +
+                           "\n\nUpdate now?", "Driver Updater " + appRelease.Version, Native.YESNO, Native.INFO) == Native.IDYES)
+                StartAppUpdate();
+        }
+
+        void StartAppUpdate()
+        {
+            if (appRelease == null || appUpdating) return;
+            if (busy) { Native.Ask("Please wait until the current scan or install finishes, then click Update now.", "Driver Updater", Native.OK, Native.INFO); return; }
+            var r = appRelease;
+            appUpdating = true;
+            E("UpdateBannerButtons").Visibility = Wpf.Vis(false);
+            E("UpdateBannerText").Text = "Downloading Driver Updater " + r.Version + "...";
+            Run(() =>
+            {
+                string file = null, error = null;
+                try { file = SelfUpdate.Download(r, pct => Post(() => E("UpdateBannerText").Text = "Downloading Driver Updater " + r.Version + "...  " + pct + "%")); }
+                catch (Exception ex) { error = ex.Message; Log.Write("App update download failed: " + ex); }
+                Post(() =>
+                {
+                    SetBusy(false);
+                    appUpdating = false;
+                    if (file == null)
+                    {
+                        E("UpdateBannerText").Text = "Driver Updater " + r.Version + " is available (you have " + App.Version + ").";
+                        E("UpdateBannerButtons").Visibility = Wpf.Vis(true);
+                        if (Native.Ask("The update couldn't be downloaded:\n" + error + "\n\nOpen the releases page to download it yourself?", "Driver Updater", Native.YESNO, Native.WARNING) == Native.IDYES)
+                            Sys.OpenUrl(r.PageUrl.Length > 0 ? r.PageUrl : SelfUpdate.ReleasesPage);
+                        return;
+                    }
+                    E("UpdateBannerText").Text = "Installing Driver Updater " + r.Version + "...";
+                    try
+                    {
+                        if (lastScan.HasValue) ScanStore.Save(lastScan.Value, list.Data.Values);
+                        SelfUpdate.Apply(file);
+                        Log.Write("Handing over to the " + r.Version + " installer");
+                        Environment.Exit(0);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Write("Couldn't start the update: " + ex);
+                        Native.Ask("Couldn't start the update:\n" + ex.Message + "\n\nYou can run it yourself:\n" + file, "Driver Updater", Native.OK, Native.WARNING);
+                        E("UpdateBannerButtons").Visibility = Wpf.Vis(true);
+                    }
+                });
+            });
         }
 
         // ---------------------------------------------------------------- reinstall

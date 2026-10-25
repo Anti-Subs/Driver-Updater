@@ -17,6 +17,11 @@ namespace DriverUpdater
     {
         static readonly string[][] Raw =
         {
+            new[] { "3.6.1", "25 Oct 2026", "Fixed the installer for 3.6.0 not opening (\"Exception has been thrown by the target of an invocation\")" },
+            new[] { "3.6.0", "25 Oct 2026",
+                "Tells you when a new Driver Updater is out: a banner on the Drivers page with 'What's new', 'Later' and one-click 'Update now'",
+                "Updates download from the official GitHub release, are checked against GitHub's published fingerprint, install over the old version and reopen the app",
+                "About page: 'Check for updates' button" },
             new[] { "3.5.3", "25 Oct 2026",
                 "'Remove old USB devices' now reads the device list straight from Windows Plug and Play - it was finding nothing on some PCs" },
             new[] { "3.5.2", "25 Oct 2026",
