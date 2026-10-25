@@ -271,6 +271,15 @@ namespace DriverUpdater
             E("AboutVersion").Text = "Version " + App.Version;
             E("ListChanges").ItemsSource = Changelog.Entries(App.Version);
             E("ListDrivers").ItemsSource = list.Rows;
+            list.Rows.CollectionChanged += (s, e) =>
+            {
+                if (e.NewItems == null) return;
+                foreach (var o in e.NewItems)
+                {
+                    var row = o as DriverItem;
+                    if (row != null) row.PropertyChanged += (o2, a) => { if (a.PropertyName == "IsChecked" && mode != "loading") Post(UpdateHeader); };
+                }
+            };
             E("ListTools").ItemsSource = tools;
 
             Wpf.On(O("NavDrivers"), "Click", (s, e) => ShowPage("Drivers"));
@@ -286,6 +295,7 @@ namespace DriverUpdater
             Wpf.On(O("BtnDevMgr"), "Click", (s, e) => Sys.OpenUrl("devmgmt.msc"));
             Wpf.On(O("BtnLog"), "Click", (s, e) => { Directory.CreateDirectory(Paths.WorkDir); Sys.OpenUrl(Paths.WorkDir); });
             Wpf.On(O("BtnExport"), "Click", (s, e) => Export());
+            Wpf.On(O("BtnOldUsb"), "Click", (s, e) => { if (!busy) CleanOldUsb(); });
 
             Action<object, EventArgs> cardClick = (s, e) =>
             {
@@ -296,6 +306,7 @@ namespace DriverUpdater
                 string tag = ((dynamic)src).Tag as string;
                 if (tag == "Update") StartInstall(new List<DriverItem> { item }, false);
                 else if (tag == "Tool") InvokeTool(item.Index);
+                else if (tag == "Reinstall") StartReinstall(item);
                 else ShowPage("Tools");
             };
             Wpf.OnButtonClick(O("ListDrivers"), cardClick);
@@ -376,7 +387,7 @@ namespace DriverUpdater
         void UpdateHeader()
         {
             int nUpd = list.Count("Update", "Queued", "Installing", "Opened");
-            int nOk = list.Count("Ok", "Installed", "Kept", "NotFor");
+            int nOk = list.Count("Ok", "Installed", "Kept", "NotFor", "Reinstalled");
             int nMk = list.Count("Vendor");
             int nUnk = list.Count("Unknown");
             int total = list.Rows.Count;
@@ -406,7 +417,9 @@ namespace DriverUpdater
                 : "Never scanned";
             E("UpdateBadgeText").Text = nUpd.ToString(CultureInfo.InvariantCulture);
             E("UpdateBadge").Visibility = Wpf.Vis(nUpd > 0);
-            E("BtnUpdateAll").Content = "Update All (" + nUpd + ")";
+            int nUpdRows = list.Count("Update");
+            int nSel = list.Rows.OfType<DriverItem>().Count(i => i.State == "Update" && i.IsChecked);
+            E("BtnUpdateAll").Content = nSel == nUpdRows ? "Update All (" + nUpd + ")" : "Update selected (" + nSel + ")";
             E("BtnUpdateAll").Visibility = Wpf.Vis(nUpd > 0 && mode != "scanning");
         }
 
@@ -677,9 +690,25 @@ namespace DriverUpdater
         {
             targets = targets.Where(t => t.State == "Update").ToList();
             if (targets.Count == 0) { Native.Ask("Tick at least one driver to update.", "Driver Updater", Native.OK, Native.INFO); return; }
+            var firmware = targets.Where(t => list.Data[t.Key].IsFirmware).ToList();
+            if (firmware.Count > 0)
+            {
+                bool onBattery = false;
+                try { onBattery = System.Windows.Forms.SystemInformation.PowerStatus.PowerLineStatus == System.Windows.Forms.PowerLineStatus.Offline; } catch { }
+                if (onBattery)
+                {
+                    Native.Ask("Plug in the charger before installing a BIOS / firmware update.\n\nThe PC refuses to update its firmware on battery, and a power cut during the update can leave it unable to start." +
+                               (targets.Count > firmware.Count ? "\n\nThe other drivers will be installed now." : ""), "Driver Updater", Native.OK, Native.WARNING);
+                    targets = targets.Except(firmware).ToList();
+                    if (targets.Count == 0) return;
+                    firmware.Clear();
+                }
+            }
             if (!skipRestore)
             {
                 string names = string.Join("\n", targets.Take(8).Select(t => "  - " + t.Name));
+                if (firmware.Count > 0) names += "\n\nIncludes a BIOS / firmware update: Windows prepares it now and the PC finishes it during the next restart " +
+                                                 "(the screen may stay dark for a few minutes - don't turn it off). If BitLocker is on, keep your recovery key handy.";
                 if (targets.Count > 8) names += "\n  - and " + (targets.Count - 8) + " more";
                 if (Native.Ask("Install " + targets.Count + " driver update(s)?\n\n" + names + "\n\nA System Restore point will be created first.", "Driver Updater", Native.YESNO, Native.QUESTION) != Native.IDYES) return;
             }
@@ -826,7 +855,8 @@ namespace DriverUpdater
                 {
                     fail++;
                     t.ApplyState("Update", d, false);
-                    t.SetTag(r != null ? r.Message : "Not installed", "#FEE2E2", "#B91C1C");
+                    t.SetTag("Not installed", "#FEE2E2", "#B91C1C");
+                    if (r != null && !string.IsNullOrEmpty(r.Message)) t.Size = r.Message.Length > 160 ? r.Message.Substring(0, 157) + "..." : r.Message;
                 }
             }
             UpdateHeader();
@@ -913,6 +943,111 @@ namespace DriverUpdater
                 }
             }
             Sys.OpenUrl(d.Url);
+        }
+
+        // ---------------------------------------------------------------- reinstall
+        void StartReinstall(DriverItem item)
+        {
+            var dev = list.Inventory.FirstOrDefault(d => string.Equals(d.Key, item.Key, StringComparison.OrdinalIgnoreCase));
+            string cls = dev != null ? dev.Class : "";
+            string note = string.Equals(cls, "DISPLAY", StringComparison.OrdinalIgnoreCase) ? "\n\nYour screen may go black or flicker for a few seconds."
+                        : string.Equals(cls, "NET", StringComparison.OrdinalIgnoreCase) ? "\n\nThe connection on this adapter will drop for a few seconds."
+                        : string.Equals(cls, "MEDIA", StringComparison.OrdinalIgnoreCase) || string.Equals(cls, "AUDIOENDPOINT", StringComparison.OrdinalIgnoreCase) ? "\n\nSound from this device will stop for a moment."
+                        : "";
+            if (Native.Ask("Reinstall the driver for " + item.Name + "?\n\nThe same version (" + item.Installed + ") is installed again from the copy Windows already keeps - nothing is downloaded. " +
+                           "This often fixes a device that stopped working properly." + note, "Reinstall driver", Native.YESNO, Native.QUESTION) != Native.IDYES) return;
+
+            ScanResult saved; list.Data.TryGetValue(item.Key, out saved);
+            string prevState = item.State, prev = mode;
+            mode = "installing";
+            item.ApplyState("Checking", saved, true);
+            item.SetTag("Reinstalling...", "#DBEAFE", "#1D4ED8");
+            dynamic bar = E("InstallProgress");
+            bar.Visibility = Wpf.Vis(true);
+            Progress(bar, 0, 1, true);
+            Footer("Reinstalling " + item.Name + "...");
+            Run(() =>
+            {
+                Reinstaller.Result res;
+                try { res = Reinstaller.Run(item.Key, cls); }
+                catch (Exception ex) { Log.Write("Reinstall failed: " + ex); res = new Reinstaller.Result { Message = ex.Message }; }
+                string ver = Sys.DriverVersionOf(item.Key);
+                Post(() =>
+                {
+                    mode = prev;
+                    E("InstallProgress").Visibility = Wpf.VisName("Hidden");
+                    SetBusy(false);
+                    if (res.Ok)
+                    {
+                        if (ver.Length > 0) item.Installed = ver;
+                        item.ApplyState("Reinstalled", new ScanResult { Key = item.Key, Name = item.Name, Reboot = res.Reboot }, false);
+                        UpdateHeader();
+                        Footer(item.Name + " reinstalled." + (res.Reboot ? " Restart to finish." : ""));
+                        if (res.Reboot && Native.Ask(item.Name + " was reinstalled. Windows needs a restart to finish.\n\nRestart now?", "Reinstall driver", Native.YESNO, Native.QUESTION) == Native.IDYES)
+                            Sys.Restart();
+                    }
+                    else
+                    {
+                        item.ApplyState(prevState, saved, false);
+                        Footer("Couldn't reinstall " + item.Name + ".");
+                        Native.Ask("Couldn't reinstall " + item.Name + ".\n\n" + res.Message + "\n\nNothing was changed. Details are in the log.", "Reinstall driver", Native.OK, Native.WARNING);
+                    }
+                });
+            });
+        }
+
+        // ---------------------------------------------------------------- old USB devices
+        void CleanOldUsb()
+        {
+            string prev = mode;
+            mode = "tool";
+            dynamic bar = E("InstallProgress");
+            bar.Visibility = Wpf.Vis(true);
+            Progress(bar, 0, 1, true);
+            Footer("Looking for USB devices that aren't plugged in...");
+            Run(() =>
+            {
+                var found = OldDevices.Find();
+                Log.Write("Old USB devices found: " + found.Count);
+                Post(() =>
+                {
+                    Action done = () => { mode = prev; E("InstallProgress").Visibility = Wpf.VisName("Hidden"); SetBusy(false); };
+                    if (found.Count == 0)
+                    {
+                        done(); Footer("No old USB devices found.");
+                        Native.Ask("Windows isn't remembering any USB devices that are unplugged right now. Nothing to clear.", "Driver Updater", Native.OK, Native.INFO);
+                        return;
+                    }
+                    var names = found.Select(f => f.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    string shown = string.Join("\n", names.Take(15).Select(n => "  \u2022 " + n)) + (names.Count > 15 ? "\n  ...and " + (names.Count - 15) + " more" : "");
+                    int ans = Native.Ask("Windows remembers " + Util.Plural(found.Count, "USB device") + " that aren't plugged in now:\n\n" + shown +
+                        "\n\nRemove them? Devices that are plugged in are never touched. Anything you plug in again is set up automatically, " +
+                        "though it may get a new drive letter or COM port number.", "Remove old USB devices", Native.YESNO, Native.QUESTION);
+                    if (ans != Native.IDYES) { done(); Footer(" "); return; }
+                    Progress(bar, 0, found.Count, false);
+                    Footer("Removing old USB devices...");
+                    Run(() =>
+                    {
+                        int ok = 0, n = 0;
+                        foreach (var f in found)
+                        {
+                            if (OldDevices.Remove(f.Id)) ok++;
+                            int k = ++n;
+                            Post(() => Progress(E("InstallProgress"), k, found.Count, false));
+                        }
+                        Log.Write("Old USB devices removed: " + ok + " of " + found.Count);
+                        Post(() =>
+                        {
+                            done();
+                            Footer("Removed " + Util.Plural(ok, "old USB device") + ".");
+                            string msg = ok == found.Count ? "Done - removed " + Util.Plural(ok, "old USB device") + "."
+                                       : "Removed " + ok + " of " + found.Count + ". Windows kept the rest (details are in the log).";
+                            if (Native.Ask(msg + "\n\nScan again now? Updates offered only for those old devices should disappear.", "Remove old USB devices", Native.YESNO, Native.INFO) == Native.IDYES)
+                            { ShowPage("Drivers"); StartScan(); }
+                        });
+                    });
+                });
+            });
         }
 
         // ---------------------------------------------------------------- export

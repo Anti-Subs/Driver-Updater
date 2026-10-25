@@ -283,6 +283,24 @@ namespace DriverUpdater
             return file;
         }
 
+        /// <summary>Unpacks a zip into a fresh folder. Leftovers from an earlier try are cleared, and a file listed
+        /// twice inside the package simply overwrites the first copy (ZipFile.ExtractToDirectory fails on both).</summary>
+        public static void Unzip(string file, string extract)
+        {
+            if (Directory.Exists(extract)) Directory.Delete(extract, true);
+            Directory.CreateDirectory(extract);
+            string root = Path.GetFullPath(extract).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            using (var zip = ZipFile.OpenRead(file))
+                foreach (var e in zip.Entries)
+                {
+                    string target = Path.GetFullPath(Path.Combine(extract, e.FullName));
+                    if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase)) continue;   // never write outside the folder
+                    if (e.FullName.EndsWith("/") || e.FullName.EndsWith("\\")) { Directory.CreateDirectory(target); continue; }
+                    Directory.CreateDirectory(Path.GetDirectoryName(target));
+                    e.ExtractToFile(target, true);
+                }
+        }
+
         public static InstallOutcome Install(ScanResult job, Action<string> status)
         {
             string url = job.Ref;
@@ -295,7 +313,7 @@ namespace DriverUpdater
             {
                 status("Unpacking " + job.Source + " package...");
                 string extract = Path.Combine(dir, "extracted");
-                ZipFile.ExtractToDirectory(file, extract);
+                Unzip(file, extract);
                 if (Directory.GetFiles(extract, "*.inf", SearchOption.AllDirectories).Length > 0)
                 {
                     status("Installing: " + job.Name);
@@ -413,6 +431,7 @@ namespace DriverUpdater
             try
             {
                 status("Unpacking the NVIDIA driver...");
+                if (Directory.Exists(extract)) Directory.Delete(extract, true);
                 Directory.CreateDirectory(extract);
                 int tarCode = Sys.Run(Sys.SystemTool("tar.exe"), "-xf \"" + file + "\" -C \"" + extract + "\"", 10 * 60 * 1000);
                 string setup = Path.Combine(extract, "setup.exe");

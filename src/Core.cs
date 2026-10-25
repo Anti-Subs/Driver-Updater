@@ -25,6 +25,15 @@ namespace DriverUpdater
         public bool Reboot;
         /// <summary>True for Microsoft sources (Windows Update / Update Catalog); false for manufacturer downloads.</summary>
         public bool IsMicrosoft { get { return Source == "Windows Update" || Source == "Microsoft Update Catalog"; } }
+        /// <summary>BIOS / system firmware updates (applied by the PC at the next restart).</summary>
+        public bool IsFirmware
+        {
+            get
+            {
+                return string.Equals(Class, "Firmware", StringComparison.OrdinalIgnoreCase)
+                    || Regex.IsMatch((Name ?? "") + " " + (Title ?? ""), @"\s-\s*Firmware\s*-|System Firmware", RegexOptions.IgnoreCase);
+            }
+        }
 
         /// <summary>Marks an offered update "Kept" when it is already in Windows' driver store, or Windows declined it before.</summary>
         public static void ApplyKeptTo(ScanResult r, ICollection<string> storeVersions, IDictionary<string, string> kept)
@@ -133,10 +142,21 @@ namespace DriverUpdater
 
         public static string Plural(int n, string word) { return n + " " + word + (n == 1 ? "" : "s"); }
 
+        /// <summary>True for device IDs that belong to something plugged in over USB (the device itself,
+        /// its storage, its keyboard/mouse part, or the phone/media entry Windows makes for it).</summary>
+        public static bool IsUsbDeviceId(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            string u = id.ToUpperInvariant();
+            return u.StartsWith(@"USB\") || u.StartsWith(@"USBSTOR\") || u.StartsWith(@"HID\VID_")
+                || u.StartsWith(@"SWD\WPDBUSENUM\") || u.Contains("USBSTOR#");
+        }
+
         /// <summary>Which official tool usually has newer builds for this driver.</summary>
         public static string VendorHint(string text, string pcMaker)
         {
             text = text ?? ""; pcMaker = pcMaker ?? "";
+            if (Regex.IsMatch(text, @"\b(Monitor|Display)\b", RegexOptions.IgnoreCase) && !Regex.IsMatch(text, "NVIDIA|Intel|AMD|Radeon|Graphics|Adapter", RegexOptions.IgnoreCase)) return "";
             bool asus = Regex.IsMatch(pcMaker, "ASUS", RegexOptions.IgnoreCase);
             if (asus && Regex.IsMatch(text, "Realtek|Cirrus|ASUS|Innovation Platform|Platform Controllers|Dynamic Tuning", RegexOptions.IgnoreCase)) return "MyASUS";
             if (Regex.IsMatch(text, "NVIDIA", RegexOptions.IgnoreCase)) return "NVIDIA app";
@@ -268,6 +288,7 @@ namespace DriverUpdater
         string _btnText; public string ButtonText { get { return _btnText; } set { Set(ref _btnText, value, "ButtonText"); } }
         string _btnTag; public string ButtonTag { get { return _btnTag; } set { Set(ref _btnTag, value, "ButtonTag"); } }
         string _btnVis = "Collapsed"; public string ButtonVisibility { get { return _btnVis; } set { Set(ref _btnVis, value, "ButtonVisibility"); } }
+        string _reVis = "Collapsed"; public string ReinstallVisibility { get { return _reVis; } set { Set(ref _reVis, value, "ReinstallVisibility"); } }
         bool _btnEnabled = true; public bool ButtonEnabled { get { return _btnEnabled; } set { Set(ref _btnEnabled, value, "ButtonEnabled"); } }
 
         public void SetTag(string text, string back, string fore) { TagText = text; TagBack = back; TagFore = fore; }
@@ -282,8 +303,14 @@ namespace DriverUpdater
             VersionLine = Manufacturer + "  |  Version: " + Installed;
             Size = "";
             string hint = r != null ? (r.Hint ?? "") : "";
+            ReinstallVisibility = !string.IsNullOrEmpty(Installed) && Kind != "Tool"
+                && Array.IndexOf(new[] { "NotScanned", "Ok", "Vendor", "Unknown", "NotFor", "Kept", "Reinstalled" }, state) >= 0 ? "Visible" : "Collapsed";
             switch (state)
             {
+                case "Reinstalled":
+                    if (r != null && r.Reboot) SetTag("Reinstalled - restart to finish", "#FEF3C7", "#B45309");
+                    else SetTag("Reinstalled", "#DCFCE7", "#15803D");
+                    break;
                 case "NotScanned": SetTag("Not scanned yet", "#F3F4F6", "#6B7280"); break;
                 case "Waiting": SetTag("Waiting", "#F3F4F6", "#6B7280"); RowOpacity = 0.6; break;
                 case "Checking": SetTag("Checking...", "#DBEAFE", "#1D4ED8"); SpinVisibility = "Visible"; CardBorder = "#93C5FD"; break;
@@ -295,7 +322,8 @@ namespace DriverUpdater
                     PillVisibility = "Visible";
                     VersionLine = "Version: " + (string.IsNullOrEmpty(Installed) ? "not installed" : Installed) + "  >  " + r.Latest;
                     Size = r.Size ?? "";
-                    CheckVisibility = "Visible"; IsChecked = true;
+                    CheckVisibility = "Visible"; IsChecked = !r.IsFirmware;
+                    if (r.IsFirmware) Size = (Size.Length > 0 ? Size + "  |  " : "") + "BIOS update - not ticked by default. Keep the charger plugged in; it finishes during a restart";
                     ButtonText = "Update"; ButtonTag = "Update"; ButtonVisibility = "Visible";
                     AccentVisibility = "Visible"; CardBorder = "#FCA5A5";
                     break;

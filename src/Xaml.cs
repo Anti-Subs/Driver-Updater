@@ -123,7 +123,7 @@ namespace DriverUpdater
                   </StackPanel>
                 </Border>
                 <TextBlock Text=""{Binding VersionLine}"" FontSize=""12"" Foreground=""#6B7280"" Margin=""0,0,14,0"" VerticalAlignment=""Center""/>
-                <TextBlock Text=""{Binding Size}"" FontSize=""12"" Foreground=""#9CA3AF"" VerticalAlignment=""Center""/>
+                <TextBlock Text=""{Binding Size}"" FontSize=""12"" Foreground=""#9CA3AF"" VerticalAlignment=""Center"" TextWrapping=""Wrap""/>
               </WrapPanel>
             </StackPanel>
             <StackPanel Grid.Column=""3"" Orientation=""Horizontal"" VerticalAlignment=""Center"" Margin=""12,0,0,0"">
@@ -149,6 +149,7 @@ namespace DriverUpdater
                 <TextBlock Text=""{Binding TagText}"" Foreground=""{Binding TagFore}"" FontSize=""12"" FontWeight=""SemiBold""/>
               </Border>
               <Button Content=""{Binding ButtonText}"" Tag=""{Binding ButtonTag}"" IsEnabled=""{Binding ButtonEnabled}"" Visibility=""{Binding ButtonVisibility}"" Style=""{StaticResource OutlineButton}"" Margin=""12,0,0,0""/>
+              <Button Content=""Reinstall"" Tag=""Reinstall"" IsEnabled=""{Binding ButtonEnabled}"" Visibility=""{Binding ReinstallVisibility}"" Style=""{StaticResource OutlineButton}"" Margin=""8,0,0,0"" ToolTip=""Install this same driver version again (fixes a driver that stopped working properly)""/>
             </StackPanel>
           </Grid>
         </Grid>
@@ -302,6 +303,7 @@ namespace DriverUpdater
             <WrapPanel>
               <Button x:Name=""BtnRestore"" Content=""System Restore"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
               <Button x:Name=""BtnDevMgr"" Content=""Device Manager"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
+              <Button x:Name=""BtnOldUsb"" Content=""Remove old USB devices..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10"" ToolTip=""Clears USB devices Windows remembers but that aren't plugged in now""/>
               <Button x:Name=""BtnExport"" Content=""Save driver list..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
               <Button x:Name=""BtnLog"" Content=""Open log folder"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
             </WrapPanel>

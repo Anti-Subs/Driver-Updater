@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.5.3 - 25 Oct 2026
+- 'Remove old USB devices' now reads the device list straight from Windows Plug and Play - it was finding nothing on some PCs
+
+## 3.5.2 - 25 Oct 2026
+- BIOS / firmware updates are no longer ticked by default, need the charger plugged in, and explain the restart they need
+- Windows Update failures say why in plain words (busy, restart pending, installer failed...) instead of 'code 4'
+- 'Update All' becomes 'Update selected' when you untick some updates
+
+## 3.5.1 - 25 Oct 2026
+- Fixed 'file already exists' when unpacking some Intel and ASUS packages (leftovers from an earlier try, or a file listed twice in the package)
+- A failed update keeps the driver's name visible; the reason is shown underneath instead of covering the row
+
+## 3.5.0 - 25 Oct 2026
+- New 'Reinstall' button on up-to-date drivers: puts the same version back from the copy Windows keeps (no download) - handy when a device misbehaves
+
+## 3.4.3 - 25 Oct 2026
+- New in Tools: 'Remove old USB devices' clears USB devices Windows remembers but that aren't plugged in (they stop pulling in driver offers like Apple's USB driver)
+- Monitors no longer point you at your PC maker's tool - their drivers are just colour profiles
+
 ## 3.4.2 - 23 Oct 2026
 - All updates download first, then install - a network driver reset can no longer break the other downloads
 - Network adapter drivers install last; dropped downloads wait for the connection and retry

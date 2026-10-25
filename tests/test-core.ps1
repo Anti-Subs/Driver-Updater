@@ -27,7 +27,31 @@ Check 'when yesterday' ([DriverUpdater.Util]::FormatWhen([datetime]'2026-10-21 0
 Check 'when older' ([DriverUpdater.Util]::FormatWhen([datetime]'2026-10-19 20:25', $now) -eq '19 Oct, 20:25')
 Check 'age' ([DriverUpdater.Util]::Age([datetime]'2026-10-22 19:35', $now) -eq '2 hours ago')
 Check 'hint asus audio' ([DriverUpdater.Util]::VendorHint('Realtek High Definition Audio', 'ASUSTeK COMPUTER INC.') -eq 'MyASUS')
+Check 'hint monitor none' ([DriverUpdater.Util]::VendorHint('Alienware Alienware Alienware 34 Curved QD-OLED Gaming Monitor', 'ASUSTeK COMPUTER INC.') -eq '')
+Check 'hint generic display none' ([DriverUpdater.Util]::VendorHint('(Standard monitor types) Microsoft Generic PnP Monitor', 'ASUSTeK COMPUTER INC.') -eq '')
+Check 'usb ids' ([DriverUpdater.Util]::IsUsbDeviceId('USB\VID_05AC&PID_12A8\abc') -and [DriverUpdater.Util]::IsUsbDeviceId('USBSTOR\Disk&Ven_SanDisk\1') -and [DriverUpdater.Util]::IsUsbDeviceId('HID\VID_046D&PID_C52B&MI_00\7') -and [DriverUpdater.Util]::IsUsbDeviceId('SWD\WPDBUSENUM\_??_USBSTOR#DISK') -and [DriverUpdater.Util]::IsUsbDeviceId('STORAGE\VOLUME\_??_USBSTOR#DISK&VEN_X'))
+Check 'non-usb ids' (-not [DriverUpdater.Util]::IsUsbDeviceId('PCI\VEN_8086&DEV_7D55\3') -and -not [DriverUpdater.Util]::IsUsbDeviceId('HID\{00001124-0000-1000-8000-00805F9B34FB}_VID&0002046D') -and -not [DriverUpdater.Util]::IsUsbDeviceId('DISPLAY\DELA1B2\5') -and -not [DriverUpdater.Util]::IsUsbDeviceId(''))
 Check 'hint intel' ([DriverUpdater.Util]::VendorHint('Intel Corporation Intel(R) Arc', 'ASUSTeK COMPUTER INC.') -eq 'Intel Driver & Support Assistant')
+
+"Reinstall button"
+$it = [DriverUpdater.DriverItem]::new(); $it.Name='Wifi'; $it.Manufacturer='Intel'; $it.Installed='24.5'
+$it.ApplyState('Ok', $null, $false); Check 'reinstall shown when up to date' ($it.ReinstallVisibility -eq 'Visible')
+$it.ApplyState('Kept', $null, $false); Check 'reinstall shown when kept' ($it.ReinstallVisibility -eq 'Visible')
+$ru=[DriverUpdater.ScanResult]::new(); $ru.Source='Windows Update'; $ru.Latest='24.7'
+$it.ApplyState('Update', $ru, $false); Check 'reinstall hidden when update offered' ($it.ReinstallVisibility -eq 'Collapsed')
+$it.ApplyState('Checking', $null, $false); Check 'reinstall hidden while checking' ($it.ReinstallVisibility -eq 'Collapsed')
+$rr=[DriverUpdater.ScanResult]::new(); $rr.Reboot=$true
+$it.ApplyState('Reinstalled', $rr, $false); Check 'reinstalled tag' ($it.TagText -eq 'Reinstalled - restart to finish' -and $it.ReinstallVisibility -eq 'Visible')
+$it.Installed=''; $it.ApplyState('Ok', $null, $false); Check 'no reinstall without a driver' ($it.ReinstallVisibility -eq 'Collapsed')
+
+"Firmware"
+$fw=[DriverUpdater.ScanResult]::new(); $fw.Name='ASUSTeK COMPUTER INC. - Firmware - 10.1.2.309'; $fw.Source='Windows Update'; $fw.Latest='10.1.2.309'; $fw.Class=''
+Check 'firmware detected by title' $fw.IsFirmware
+$fw2=[DriverUpdater.ScanResult]::new(); $fw2.Name='X'; $fw2.Class='Firmware'; Check 'firmware detected by class' $fw2.IsFirmware
+$nf=[DriverUpdater.ScanResult]::new(); $nf.Name='Intel(R) Wi-Fi 6 AX200 160MHz'; $nf.Class='NET'; Check 'wifi not firmware' (-not $nf.IsFirmware)
+$it2 = [DriverUpdater.DriverItem]::new(); $it2.Name=$fw.Name; $it2.Installed=''
+$it2.ApplyState('Update', $fw, $false); Check 'firmware not ticked by default' (-not $it2.IsChecked -and $it2.Size -like '*BIOS update*')
+$it2.ApplyState('Update', $nf, $false); Check 'normal update ticked' ($it2.IsChecked)
 
 "Driver list"
 $L = [DriverUpdater.DriverList]::new()

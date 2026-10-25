@@ -245,14 +245,46 @@ namespace DriverUpdater
             if (!(bool)target.EulaAccepted) target.AcceptEula();
             dynamic coll = Activator.CreateInstance(Type.GetTypeFromProgID("Microsoft.Update.UpdateColl", true));
             coll.Add(target);
-            dynamic dl = session.CreateUpdateDownloader(); dl.Updates = coll; dl.Download();
-            dynamic inst = session.CreateUpdateInstaller(); inst.Updates = coll;
-            dynamic res = inst.Install();
-            int code = (int)res.GetUpdateResult(0).ResultCode;
+            dynamic res;
+            try
+            {
+                dynamic dl = session.CreateUpdateDownloader(); dl.Updates = coll;
+                dynamic dres = dl.Download();
+                int dcode = (int)dres.GetUpdateResult(0).ResultCode;
+                if (dcode != 2 && dcode != 3)
+                    return Tuple.Create(false, "Download failed: " + Explain((int)dres.GetUpdateResult(0).HResult, dcode), false);
+                dynamic inst = session.CreateUpdateInstaller(); inst.Updates = coll;
+                res = inst.Install();
+            }
+            catch (COMException ex) { Log.Write("Windows Update error 0x" + ex.HResult.ToString("X8") + ": " + ex.Message); return Tuple.Create(false, Explain(ex.HResult, 4), false); }
+            dynamic one = res.GetUpdateResult(0);
+            int code = (int)one.ResultCode;
             bool reboot = false;
-            try { reboot = (bool)res.RebootRequired || (bool)res.GetUpdateResult(0).RebootRequired; } catch { }
+            try { reboot = (bool)res.RebootRequired || (bool)one.RebootRequired; } catch { }
             bool ok = code == 2 || code == 3;
-            return Tuple.Create(ok, ok ? "Installed" : "Failed (code " + code + ")", reboot);
+            int hr = 0; try { hr = (int)one.HResult; } catch { }
+            if (!ok) Log.Write("Windows Update install result " + code + ", HRESULT 0x" + hr.ToString("X8"));
+            return Tuple.Create(ok, ok ? "Installed" : Explain(hr, code), reboot);
+        }
+
+        /// <summary>Plain-words reason for a Windows Update failure.</summary>
+        public static string Explain(int hr, int resultCode)
+        {
+            string hex = "0x" + hr.ToString("X8");
+            switch ((uint)hr)
+            {
+                case 0x80240016: return "Windows Update is busy installing something else, or waiting for a restart. Restart or let it finish, then try again";
+                case 0x80070BC9: case 0x8024A105: return "A restart is pending from an earlier update. Restart, then try again";
+                case 0x8024200B: case 0x80242016: return "The update's installer reported a failure (" + hex + "). For a BIOS update, plug in the charger and try again after a restart";
+                case 0x80240017: return "Windows says this update no longer applies to this PC";
+                case 0x800F020B: return "The device this update is for isn't connected";
+                case 0x80070005: return "Access denied (" + hex + ")";
+                case 0x80240022: case 0x8024001E: return "Windows Update stopped while installing (" + hex + "). Try again";
+                case 0x80070070: return "Not enough disk space";
+                case 0x80072EE2: case 0x80072EFD: case 0x80072EE7: case 0x80072F8F: return "Couldn't reach Windows Update (" + hex + "). Check the internet connection";
+            }
+            if (hr != 0) return "Windows Update couldn't install it (error " + hex + ")";
+            return resultCode == 5 ? "Windows Update cancelled the install" : "Windows Update couldn't install it";
         }
 
         static string Str(object o) { return o == null ? "" : Convert.ToString(o, CultureInfo.InvariantCulture); }
@@ -516,6 +548,161 @@ namespace DriverUpdater
                 catch { Thread.Sleep(3000); }
             }
             return false;
+        }
+    }
+
+    /// <summary>USB devices Windows remembers but that aren't plugged in now.</summary>
+    public static class OldDevices
+    {
+        public class Entry { public string Id, Name; }
+
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Locate_DevNodeW(out uint devInst, string deviceId, uint flags);
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Get_Device_ID_List_SizeW(out uint len, string filter, uint flags);
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Get_Device_ID_ListW(string filter, char[] buffer, uint len, uint flags);
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Get_DevNode_Registry_PropertyW(uint devInst, uint prop, out uint regType, StringBuilder buffer, ref uint len, uint flags);
+        [DllImport("cfgmgr32.dll")] static extern int CM_Uninstall_DevNode(uint devInst, uint flags);
+        const uint CM_LOCATE_DEVNODE_NORMAL = 0, CM_LOCATE_DEVNODE_PHANTOM = 1;
+        const uint CM_DRP_DEVICEDESC = 0x01, CM_DRP_FRIENDLYNAME = 0x0D;
+        const int CR_SUCCESS = 0;
+
+        /// <summary>Every device Windows has a record of, connected or not (straight from Plug and Play).</summary>
+        static List<string> AllDeviceIds()
+        {
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                uint len;
+                if (CM_Get_Device_ID_List_SizeW(out len, null, 0) != CR_SUCCESS || len == 0) break;
+                len += 4096;   // room for devices that appear meanwhile
+                var buf = new char[len];
+                int cr = CM_Get_Device_ID_ListW(null, buf, len, 0);
+                if (cr == CR_SUCCESS)
+                    return new string(buf).Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                Log.Write("Device list read failed (CR " + cr + "), retrying");
+            }
+            return new List<string>();
+        }
+
+        static string Prop(uint dev, uint prop)
+        {
+            uint type, len = 1024; var sb = new StringBuilder(512);
+            return CM_Get_DevNode_Registry_PropertyW(dev, prop, out type, sb, ref len, 0) == CR_SUCCESS ? sb.ToString() : "";
+        }
+
+        public static List<Entry> Find()
+        {
+            var list = new List<Entry>();
+            var all = AllDeviceIds();
+            int usb = 0;
+            foreach (var id in all)
+            {
+                if (!Util.IsUsbDeviceId(id)) continue;
+                usb++;
+                if (IsConnected(id)) continue;
+                uint dev;
+                if (CM_Locate_DevNodeW(out dev, id, CM_LOCATE_DEVNODE_PHANTOM) != CR_SUCCESS) continue;
+                string name = Prop(dev, CM_DRP_FRIENDLYNAME);
+                if (name.Length == 0) name = Prop(dev, CM_DRP_DEVICEDESC);
+                list.Add(new Entry { Id = id, Name = name.Length > 0 ? name : id });
+            }
+            Log.Write("Devices on record: " + all.Count + ", USB: " + usb + ", USB not plugged in: " + list.Count);
+            return list.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        /// <summary>A normal locate only finds devices that are attached right now - those are never touched.</summary>
+        static bool IsConnected(string id)
+        {
+            uint dev;
+            return CM_Locate_DevNodeW(out dev, id, CM_LOCATE_DEVNODE_NORMAL) == CR_SUCCESS;
+        }
+
+        /// <summary>Removes one remembered device. Windows sets it up again next time it's plugged in.</summary>
+        public static bool Remove(string id)
+        {
+            try
+            {
+                if (IsConnected(id)) return false;
+                uint dev;
+                if (CM_Locate_DevNodeW(out dev, id, CM_LOCATE_DEVNODE_PHANTOM) != CR_SUCCESS) return false;
+                int cr = CM_Uninstall_DevNode(dev, 0);
+                if (cr != CR_SUCCESS) Log.Write("Couldn't remove " + id + " (CR " + cr + ")");
+                return cr == CR_SUCCESS;
+            }
+            catch (Exception ex) { Log.Write("Couldn't remove " + id + ": " + ex.Message); return false; }
+        }
+    }
+
+    /// <summary>Puts the driver a device already uses back on it (same version, from Windows' driver store).</summary>
+    public static class Reinstaller
+    {
+        public class Result { public bool Ok, Reboot; public string Message = ""; }
+
+        [DllImport("setupapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern bool SetupGetInfDriverStoreLocationW(string fileName, IntPtr altPlatform, string localeName, StringBuilder returnBuffer, int size, out int requiredSize);
+        [DllImport("newdev.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern bool UpdateDriverForPlugAndPlayDevicesW(IntPtr hwnd, string hardwareId, string infPath, uint flags, out bool rebootRequired);
+        const uint INSTALLFLAG_FORCE = 1;
+
+        /// <summary>Classes where taking the device away even for a moment could hang Windows.</summary>
+        static readonly string[] NoRemove = { "DISKDRIVE", "HDC", "SCSIADAPTER", "SYSTEM", "PROCESSOR", "COMPUTER", "VOLUME", "FIRMWARE" };
+
+        static string Q(string id) { return id.Replace("\\", "\\\\").Replace("'", "\\'"); }
+
+        public static Result Run(string deviceId, string devClass)
+        {
+            var res = new Result();
+            string inf = Sys.Wmi1("SELECT InfName FROM Win32_PnPSignedDriver WHERE DeviceID = '" + Q(deviceId) + "'", "InfName");
+            if (inf.Length == 0) { res.Message = "Windows doesn't list a driver file for this device."; return res; }
+
+            string infPath = null;
+            try
+            {
+                var sb = new StringBuilder(1024); int need;
+                if (SetupGetInfDriverStoreLocationW(inf, IntPtr.Zero, null, sb, sb.Capacity, out need)) infPath = sb.ToString();
+            }
+            catch (Exception ex) { Log.Write("Driver store lookup failed: " + ex.Message); }
+            if (string.IsNullOrEmpty(infPath) || !File.Exists(infPath)) infPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "INF", inf);
+            Log.Write("Reinstall " + deviceId + " from " + infPath);
+
+            // Use only this device's own hardware IDs that the driver file names, so no other kind of device is touched
+            string infText = "";
+            try { infText = File.ReadAllText(infPath); } catch { }
+            var ids = new List<string>();
+            try
+            {
+                using (var s = new ManagementObjectSearcher("SELECT HardwareID FROM Win32_PnPEntity WHERE PNPDeviceID = '" + Q(deviceId) + "'"))
+                    foreach (ManagementObject o in s.Get()) ids.AddRange((o["HardwareID"] as string[]) ?? new string[0]);
+            }
+            catch (Exception ex) { Log.Write("Hardware ID lookup failed: " + ex.Message); }
+            int lastErr = 0;
+            foreach (var id in ids.Where(i => infText.IndexOf(i, StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                bool reboot;
+                if (UpdateDriverForPlugAndPlayDevicesW(IntPtr.Zero, id, infPath, INSTALLFLAG_FORCE, out reboot))
+                {
+                    res.Ok = true; res.Reboot = reboot; Log.Write("Reinstalled via " + id + (reboot ? " (restart needed)" : ""));
+                    return res;
+                }
+                lastErr = Marshal.GetLastWin32Error();
+                Log.Write("Reinstall via " + id + " failed: 0x" + lastErr.ToString("X8"));
+            }
+
+            // Fallback: what Device Manager does with "Uninstall device" + "Scan for hardware changes" (driver files are kept)
+            if (Array.IndexOf(NoRemove, (devClass ?? "").ToUpperInvariant()) < 0)
+            {
+                string pnputil = Sys.SystemTool("pnputil.exe");
+                int rc = Sys.Run(pnputil, "/remove-device \"" + deviceId + "\"", 120000);
+                if (rc == 0 || rc == 3010)
+                {
+                    Sys.Run(pnputil, "/scan-devices", 180000);
+                    Thread.Sleep(3000);
+                    if (Sys.DriverVersionOf(deviceId).Length > 0) { res.Ok = true; res.Reboot = rc == 3010; return res; }
+                    res.Ok = true; res.Reboot = true;   // device comes back after a restart at the latest
+                    return res;
+                }
+                Log.Write("pnputil remove-device returned " + rc);
+            }
+            res.Message = lastErr != 0 ? "Windows refused to reinstall it (error 0x" + lastErr.ToString("X8") + ")." : "Windows couldn't reinstall this driver.";
+            return res;
         }
     }
 
