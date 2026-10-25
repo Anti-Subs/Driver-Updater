@@ -33,6 +33,17 @@ Check 'usb ids' ([DriverUpdater.Util]::IsUsbDeviceId('USB\VID_05AC&PID_12A8\abc'
 Check 'non-usb ids' (-not [DriverUpdater.Util]::IsUsbDeviceId('PCI\VEN_8086&DEV_7D55\3') -and -not [DriverUpdater.Util]::IsUsbDeviceId('HID\{00001124-0000-1000-8000-00805F9B34FB}_VID&0002046D') -and -not [DriverUpdater.Util]::IsUsbDeviceId('DISPLAY\DELA1B2\5') -and -not [DriverUpdater.Util]::IsUsbDeviceId(''))
 Check 'hint intel' ([DriverUpdater.Util]::VendorHint('Intel Corporation Intel(R) Arc', 'ASUSTeK COMPUTER INC.') -eq 'Intel Driver & Support Assistant')
 
+"Reinstall button"
+$it = [DriverUpdater.DriverItem]::new(); $it.Name='Wifi'; $it.Manufacturer='Intel'; $it.Installed='24.5'
+$it.ApplyState('Ok', $null, $false); Check 'reinstall shown when up to date' ($it.ReinstallVisibility -eq 'Visible')
+$it.ApplyState('Kept', $null, $false); Check 'reinstall shown when kept' ($it.ReinstallVisibility -eq 'Visible')
+$ru=[DriverUpdater.ScanResult]::new(); $ru.Source='Windows Update'; $ru.Latest='24.7'
+$it.ApplyState('Update', $ru, $false); Check 'reinstall hidden when update offered' ($it.ReinstallVisibility -eq 'Collapsed')
+$it.ApplyState('Checking', $null, $false); Check 'reinstall hidden while checking' ($it.ReinstallVisibility -eq 'Collapsed')
+$rr=[DriverUpdater.ScanResult]::new(); $rr.Reboot=$true
+$it.ApplyState('Reinstalled', $rr, $false); Check 'reinstalled tag' ($it.TagText -eq 'Reinstalled - restart to finish' -and $it.ReinstallVisibility -eq 'Visible')
+$it.Installed=''; $it.ApplyState('Ok', $null, $false); Check 'no reinstall without a driver' ($it.ReinstallVisibility -eq 'Collapsed')
+
 "Driver list"
 $L = [DriverUpdater.DriverList]::new()
 foreach ($n in 'Audio','Camera','Touch','Wifi') { $d = [DriverUpdater.DeviceInfo]::new(); $d.Key="K:$n"; $d.Name=$n; $d.Manufacturer='M'; $d.Class='MEDIA'; $d.Version=@{Audio='6.0.1';Camera='10.0';Touch='16.0';Wifi='24.5'}[$n]; $L.Inventory.Add($d) }

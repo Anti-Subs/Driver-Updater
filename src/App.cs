@@ -297,6 +297,7 @@ namespace DriverUpdater
                 string tag = ((dynamic)src).Tag as string;
                 if (tag == "Update") StartInstall(new List<DriverItem> { item }, false);
                 else if (tag == "Tool") InvokeTool(item.Index);
+                else if (tag == "Reinstall") StartReinstall(item);
                 else ShowPage("Tools");
             };
             Wpf.OnButtonClick(O("ListDrivers"), cardClick);
@@ -377,7 +378,7 @@ namespace DriverUpdater
         void UpdateHeader()
         {
             int nUpd = list.Count("Update", "Queued", "Installing", "Opened");
-            int nOk = list.Count("Ok", "Installed", "Kept", "NotFor");
+            int nOk = list.Count("Ok", "Installed", "Kept", "NotFor", "Reinstalled");
             int nMk = list.Count("Vendor");
             int nUnk = list.Count("Unknown");
             int total = list.Rows.Count;
@@ -914,6 +915,57 @@ namespace DriverUpdater
                 }
             }
             Sys.OpenUrl(d.Url);
+        }
+
+        // ---------------------------------------------------------------- reinstall
+        void StartReinstall(DriverItem item)
+        {
+            var dev = list.Inventory.FirstOrDefault(d => string.Equals(d.Key, item.Key, StringComparison.OrdinalIgnoreCase));
+            string cls = dev != null ? dev.Class : "";
+            string note = string.Equals(cls, "DISPLAY", StringComparison.OrdinalIgnoreCase) ? "\n\nYour screen may go black or flicker for a few seconds."
+                        : string.Equals(cls, "NET", StringComparison.OrdinalIgnoreCase) ? "\n\nThe connection on this adapter will drop for a few seconds."
+                        : string.Equals(cls, "MEDIA", StringComparison.OrdinalIgnoreCase) || string.Equals(cls, "AUDIOENDPOINT", StringComparison.OrdinalIgnoreCase) ? "\n\nSound from this device will stop for a moment."
+                        : "";
+            if (Native.Ask("Reinstall the driver for " + item.Name + "?\n\nThe same version (" + item.Installed + ") is installed again from the copy Windows already keeps - nothing is downloaded. " +
+                           "This often fixes a device that stopped working properly." + note, "Reinstall driver", Native.YESNO, Native.QUESTION) != Native.IDYES) return;
+
+            ScanResult saved; list.Data.TryGetValue(item.Key, out saved);
+            string prevState = item.State, prev = mode;
+            mode = "installing";
+            item.ApplyState("Checking", saved, true);
+            item.SetTag("Reinstalling...", "#DBEAFE", "#1D4ED8");
+            dynamic bar = E("InstallProgress");
+            bar.Visibility = Wpf.Vis(true);
+            Progress(bar, 0, 1, true);
+            Footer("Reinstalling " + item.Name + "...");
+            Run(() =>
+            {
+                Reinstaller.Result res;
+                try { res = Reinstaller.Run(item.Key, cls); }
+                catch (Exception ex) { Log.Write("Reinstall failed: " + ex); res = new Reinstaller.Result { Message = ex.Message }; }
+                string ver = Sys.DriverVersionOf(item.Key);
+                Post(() =>
+                {
+                    mode = prev;
+                    E("InstallProgress").Visibility = Wpf.VisName("Hidden");
+                    SetBusy(false);
+                    if (res.Ok)
+                    {
+                        if (ver.Length > 0) item.Installed = ver;
+                        item.ApplyState("Reinstalled", new ScanResult { Key = item.Key, Name = item.Name, Reboot = res.Reboot }, false);
+                        UpdateHeader();
+                        Footer(item.Name + " reinstalled." + (res.Reboot ? " Restart to finish." : ""));
+                        if (res.Reboot && Native.Ask(item.Name + " was reinstalled. Windows needs a restart to finish.\n\nRestart now?", "Reinstall driver", Native.YESNO, Native.QUESTION) == Native.IDYES)
+                            Sys.Restart();
+                    }
+                    else
+                    {
+                        item.ApplyState(prevState, saved, false);
+                        Footer("Couldn't reinstall " + item.Name + ".");
+                        Native.Ask("Couldn't reinstall " + item.Name + ".\n\n" + res.Message + "\n\nNothing was changed. Details are in the log.", "Reinstall driver", Native.OK, Native.WARNING);
+                    }
+                });
+            });
         }
 
         // ---------------------------------------------------------------- old USB devices

@@ -585,6 +585,81 @@ namespace DriverUpdater
         }
     }
 
+    /// <summary>Puts the driver a device already uses back on it (same version, from Windows' driver store).</summary>
+    public static class Reinstaller
+    {
+        public class Result { public bool Ok, Reboot; public string Message = ""; }
+
+        [DllImport("setupapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern bool SetupGetInfDriverStoreLocationW(string fileName, IntPtr altPlatform, string localeName, StringBuilder returnBuffer, int size, out int requiredSize);
+        [DllImport("newdev.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern bool UpdateDriverForPlugAndPlayDevicesW(IntPtr hwnd, string hardwareId, string infPath, uint flags, out bool rebootRequired);
+        const uint INSTALLFLAG_FORCE = 1;
+
+        /// <summary>Classes where taking the device away even for a moment could hang Windows.</summary>
+        static readonly string[] NoRemove = { "DISKDRIVE", "HDC", "SCSIADAPTER", "SYSTEM", "PROCESSOR", "COMPUTER", "VOLUME", "FIRMWARE" };
+
+        static string Q(string id) { return id.Replace("\\", "\\\\").Replace("'", "\\'"); }
+
+        public static Result Run(string deviceId, string devClass)
+        {
+            var res = new Result();
+            string inf = Sys.Wmi1("SELECT InfName FROM Win32_PnPSignedDriver WHERE DeviceID = '" + Q(deviceId) + "'", "InfName");
+            if (inf.Length == 0) { res.Message = "Windows doesn't list a driver file for this device."; return res; }
+
+            string infPath = null;
+            try
+            {
+                var sb = new StringBuilder(1024); int need;
+                if (SetupGetInfDriverStoreLocationW(inf, IntPtr.Zero, null, sb, sb.Capacity, out need)) infPath = sb.ToString();
+            }
+            catch (Exception ex) { Log.Write("Driver store lookup failed: " + ex.Message); }
+            if (string.IsNullOrEmpty(infPath) || !File.Exists(infPath)) infPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "INF", inf);
+            Log.Write("Reinstall " + deviceId + " from " + infPath);
+
+            // Use only this device's own hardware IDs that the driver file names, so no other kind of device is touched
+            string infText = "";
+            try { infText = File.ReadAllText(infPath); } catch { }
+            var ids = new List<string>();
+            try
+            {
+                using (var s = new ManagementObjectSearcher("SELECT HardwareID FROM Win32_PnPEntity WHERE PNPDeviceID = '" + Q(deviceId) + "'"))
+                    foreach (ManagementObject o in s.Get()) ids.AddRange((o["HardwareID"] as string[]) ?? new string[0]);
+            }
+            catch (Exception ex) { Log.Write("Hardware ID lookup failed: " + ex.Message); }
+            int lastErr = 0;
+            foreach (var id in ids.Where(i => infText.IndexOf(i, StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                bool reboot;
+                if (UpdateDriverForPlugAndPlayDevicesW(IntPtr.Zero, id, infPath, INSTALLFLAG_FORCE, out reboot))
+                {
+                    res.Ok = true; res.Reboot = reboot; Log.Write("Reinstalled via " + id + (reboot ? " (restart needed)" : ""));
+                    return res;
+                }
+                lastErr = Marshal.GetLastWin32Error();
+                Log.Write("Reinstall via " + id + " failed: 0x" + lastErr.ToString("X8"));
+            }
+
+            // Fallback: what Device Manager does with "Uninstall device" + "Scan for hardware changes" (driver files are kept)
+            if (Array.IndexOf(NoRemove, (devClass ?? "").ToUpperInvariant()) < 0)
+            {
+                string pnputil = Sys.SystemTool("pnputil.exe");
+                int rc = Sys.Run(pnputil, "/remove-device \"" + deviceId + "\"", 120000);
+                if (rc == 0 || rc == 3010)
+                {
+                    Sys.Run(pnputil, "/scan-devices", 180000);
+                    Thread.Sleep(3000);
+                    if (Sys.DriverVersionOf(deviceId).Length > 0) { res.Ok = true; res.Reboot = rc == 3010; return res; }
+                    res.Ok = true; res.Reboot = true;   // device comes back after a restart at the latest
+                    return res;
+                }
+                Log.Write("pnputil remove-device returned " + rc);
+            }
+            res.Message = lastErr != 0 ? "Windows refused to reinstall it (error 0x" + lastErr.ToString("X8") + ")." : "Windows couldn't reinstall this driver.";
+            return res;
+        }
+    }
+
     public static class DriverStore
     {
         /// <summary>All driver versions present in Windows' driver store (from "pnputil /enum-drivers").</summary>

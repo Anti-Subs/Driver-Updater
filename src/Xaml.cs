@@ -149,6 +149,7 @@ namespace DriverUpdater
                 <TextBlock Text=""{Binding TagText}"" Foreground=""{Binding TagFore}"" FontSize=""12"" FontWeight=""SemiBold""/>
               </Border>
               <Button Content=""{Binding ButtonText}"" Tag=""{Binding ButtonTag}"" IsEnabled=""{Binding ButtonEnabled}"" Visibility=""{Binding ButtonVisibility}"" Style=""{StaticResource OutlineButton}"" Margin=""12,0,0,0""/>
+              <Button Content=""Reinstall"" Tag=""Reinstall"" IsEnabled=""{Binding ButtonEnabled}"" Visibility=""{Binding ReinstallVisibility}"" Style=""{StaticResource OutlineButton}"" Margin=""8,0,0,0"" ToolTip=""Install this same driver version again (fixes a driver that stopped working properly)""/>
             </StackPanel>
           </Grid>
         </Grid>
