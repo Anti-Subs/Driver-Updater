@@ -1,37 +1,28 @@
 # Changelog
 
-## 3.7.0 - 25 Oct 2026
-- New source: Dell and Alienware - drivers for your exact model from Dell's official catalog (the one Dell Command | Update uses), installed silently
-- About page lists every driver source, marking the ones used on this PC
-- Tools page: Utilities moved above the manufacturer tools
-- Dark mode: follows Windows automatically, or pick Light / Dark on the About page
+## 3.7.1 - 25 Oct 2026
+Includes everything from 3.5.3, 3.6.1 and 3.7.0.
 
-## 3.6.1 - 25 Oct 2026
-- Fixed the installer for 3.6.0 not opening ("Exception has been thrown by the target of an invocation")
+### New
+- Dell and Alienware drivers for your exact model, from Dell's official catalog, installed silently
+- Dark mode that follows Windows, or pick Light / Dark on the About page
+- Update notifications: a banner when a new version is out, with one-click Update now
+- Reinstall button on up-to-date drivers (no download needed)
+- Remove old USB devices in Tools: clears devices Windows remembers but aren't plugged in
+- About page lists every driver source and marks the ones used on this PC
 
-## 3.6.0 - 25 Oct 2026
-- Tells you when a new Driver Updater is out: a banner on the Drivers page with 'What's new', 'Later' and one-click 'Update now'
-- Updates download from the official GitHub release, are checked against GitHub's published fingerprint, install over the old version and reopen the app
-- About page: 'Check for updates' button
+### Improved
+- Colour-coded device icons by kind (graphics, network, audio, storage, input...)
+- BIOS / firmware updates aren't ticked by default and need the charger plugged in
+- Windows Update errors explained in plain words
+- "Update All" becomes "Update selected" when you untick some
+- Plug-in devices and monitors no longer point to your PC maker's tool
+- Tools page: Utilities moved to the top
 
-## 3.5.3 - 25 Oct 2026
-- 'Remove old USB devices' now reads the device list straight from Windows Plug and Play - it was finding nothing on some PCs
-
-## 3.5.2 - 25 Oct 2026
-- BIOS / firmware updates are no longer ticked by default, need the charger plugged in, and explain the restart they need
-- Windows Update failures say why in plain words (busy, restart pending, installer failed...) instead of 'code 4'
-- 'Update All' becomes 'Update selected' when you untick some updates
-
-## 3.5.1 - 25 Oct 2026
-- Fixed 'file already exists' when unpacking some Intel and ASUS packages (leftovers from an earlier try, or a file listed twice in the package)
-- A failed update keeps the driver's name visible; the reason is shown underneath instead of covering the row
-
-## 3.5.0 - 25 Oct 2026
-- New 'Reinstall' button on up-to-date drivers: puts the same version back from the copy Windows keeps (no download) - handy when a device misbehaves
-
-## 3.4.3 - 25 Oct 2026
-- New in Tools: 'Remove old USB devices' clears USB devices Windows remembers but that aren't plugged in (they stop pulling in driver offers like Apple's USB driver)
-- Monitors no longer point you at your PC maker's tool - their drivers are just colour profiles
+### Fixed
+- "File already exists" when unpacking some Intel and ASUS packages
+- A failed update no longer hides the driver's name
+- Old USB devices not being found on some PCs
 
 ## 3.4.2 - 23 Oct 2026
 - All updates download first, then install - a network driver reset can no longer break the other downloads

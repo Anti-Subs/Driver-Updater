@@ -471,7 +471,9 @@ namespace DriverUpdater
             else if (nUpd > 0) suffix = ": " + Util.Plural(nUpd, "update") + " available";
             else if (nUnk > 0) suffix = ": partly checked";
             else suffix = ": all up to date";
-            E("CountRun").Text = suffix;
+            // the colon stays in the heading colour; only the status after it is coloured
+            E("CountColon").Text = suffix.StartsWith(":") ? ":" : "";
+            E("CountRun").Text = suffix.StartsWith(":") ? suffix.Substring(1) : suffix;
             E("CountRun").Foreground = Wpf.Brush(nUpd > 0 || mode == "scanning" ? "#DC2626" : nUnk > 0 ? "#B45309" : "#16A34A");
 
             bool scanned = lastScan.HasValue || mode == "scanning";

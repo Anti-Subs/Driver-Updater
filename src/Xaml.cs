@@ -236,7 +236,7 @@ namespace DriverUpdater
           </StackPanel>
           <StackPanel VerticalAlignment=""Center"">
             <TextBlock FontSize=""24"" FontWeight=""SemiBold"" Foreground=""#111827"" TextTrimming=""CharacterEllipsis"">
-              <Run Text=""Your drivers""/><Run x:Name=""CountRun"" Text="""" Foreground=""#DC2626""/>
+              <Run Text=""Your drivers""/><Run x:Name=""CountColon"" Text=""""/><Run x:Name=""CountRun"" Text="""" Foreground=""#DC2626""/>
             </TextBlock>
             <StackPanel Orientation=""Horizontal"" Margin=""1,4,0,0"">
               <TextBlock Text=""&#xE823;"" FontFamily=""Segoe MDL2 Assets"" FontSize=""12"" Foreground=""#6B7280"" VerticalAlignment=""Center"" Margin=""0,0,6,0""/>
