@@ -33,6 +33,8 @@ namespace DriverUpdater
             {"#DCFCE7","#12301F"}, {"#15803D","#4ADE80"}, {"#16A34A","#4ADE80"}, {"#ECFDF5","#0F2A21"}, {"#059669","#34D399"}, {"#047857","#6EE7B7"},
             {"#FEF3C7","#33280F"}, {"#B45309","#FBBF24"},
             {"#FEE2E2","#3A1717"}, {"#B91C1C","#F87171"}, {"#DC2626","#F87171"}, {"#FEF2F2","#2E1515"}, {"#FCA5A5","#7F2D2D"},
+            {"#FFEDD5","#3A2312"}, {"#C2410C","#FB923C"}, {"#CCFBF1","#0F2E2B"}, {"#0F766E","#2DD4BF"}, {"#FAE8FF","#331536"}, {"#A21CAF","#E879F9"},
+            {"#ECFEFF","#0E2A30"}, {"#0E7490","#22D3EE"}, {"#F0FDF4","#11291A"},
             {"#FCE7F3","#3A1830"}, {"#DB2777","#F472B6"}, {"#F5F3FF","#221B3A"}, {"#7C3AED","#A78BFA"},
         };
 
@@ -227,15 +229,21 @@ namespace DriverUpdater
         }
 
         /// <summary>Which official tool usually has newer builds for this driver.</summary>
-        public static string VendorHint(string text, string pcMaker)
+        public static string VendorHint(string text, string pcMaker) { return VendorHint(text, pcMaker, null, null); }
+
+        /// <param name="deviceId">Device instance ID; plug-in devices (USB, Bluetooth, monitors) never get the PC maker's tool.</param>
+        public static string VendorHint(string text, string pcMaker, string deviceId, string cls)
         {
             text = text ?? ""; pcMaker = pcMaker ?? "";
-            if (Regex.IsMatch(text, @"\b(Monitor|Display)\b", RegexOptions.IgnoreCase) && !Regex.IsMatch(text, "NVIDIA|Intel|AMD|Radeon|Graphics|Adapter", RegexOptions.IgnoreCase)) return "";
+            bool external = Regex.IsMatch(deviceId ?? "", @"^(USB|HID|USBSTOR|SWD|BTH|BTHENUM|BTHLE|DISPLAY|MONITOR)\\", RegexOptions.IgnoreCase)
+                         || Regex.IsMatch(cls ?? "", "^(Monitor|Printer|PrintQueue|WPD)$", RegexOptions.IgnoreCase);
+            if (Regex.IsMatch(text, @"\b(Monitor|Display)\b|\((DisplayPort|HDMI)\)", RegexOptions.IgnoreCase) && !Regex.IsMatch(text, "NVIDIA|Intel|AMD|Radeon|Graphics|Adapter", RegexOptions.IgnoreCase)) return "";
             bool asus = Regex.IsMatch(pcMaker, "ASUS", RegexOptions.IgnoreCase);
-            if (asus && Regex.IsMatch(text, "Realtek|Cirrus|ASUS|Innovation Platform|Platform Controllers|Dynamic Tuning", RegexOptions.IgnoreCase)) return "MyASUS";
+            if (asus && !external && Regex.IsMatch(text, "Realtek|Cirrus|ASUS|Innovation Platform|Platform Controllers|Dynamic Tuning", RegexOptions.IgnoreCase)) return "MyASUS";
             if (Regex.IsMatch(text, "NVIDIA", RegexOptions.IgnoreCase)) return "NVIDIA app";
             if (Regex.IsMatch(text, "Intel", RegexOptions.IgnoreCase)) return "Intel Driver & Support Assistant";
             if (Regex.IsMatch(text, "AMD|Radeon", RegexOptions.IgnoreCase)) return "AMD Software";
+            if (external) return "";      // plug-in devices come from their own maker, not the PC maker
             if (Regex.IsMatch(pcMaker, "Dell|Alienware", RegexOptions.IgnoreCase)) return "Dell SupportAssist";
             if (Regex.IsMatch(pcMaker, "HP|Hewlett", RegexOptions.IgnoreCase)) return "HP Support Assistant";
             if (Regex.IsMatch(pcMaker, "Lenovo", RegexOptions.IgnoreCase)) return "Lenovo Vantage";
@@ -243,29 +251,47 @@ namespace DriverUpdater
             return "";
         }
 
-        /// <summary>Icon glyph (Segoe MDL2 Assets) and colours for a device class.</summary>
+        /// <summary>Icon and colours for a device row: one colour family per kind of device.</summary>
         public static string[] DeviceLook(string cls, string name)
         {
-            string c = (cls ?? "").ToUpperInvariant();
+            string c = (cls ?? "").ToUpperInvariant(), n = name ?? "";
             Func<int, string> g = code => ((char)code).ToString();
-            switch (c)
-            {
-                case "DISPLAY": return new[] { g(0xE7F4), "#EEF2FF", "#4F46E5" };
-                case "NET":
-                    if (Regex.IsMatch(name ?? "", @"Wi-?Fi|Wireless|WLAN|802\.11", RegexOptions.IgnoreCase)) return new[] { g(0xE701), "#E0F2FE", "#0284C7" };
-                    return new[] { g(0xE839), "#E0F2FE", "#0284C7" };
-                case "MEDIA": case "AUDIOENDPOINT": return new[] { g(0xE767), "#FCE7F3", "#DB2777" };
-                case "BLUETOOTH": return new[] { g(0xE702), "#E0E7FF", "#4338CA" };
-                case "KEYBOARD": return new[] { g(0xE765), "#F3F4F6", "#374151" };
-                case "MOUSE": return new[] { g(0xE962), "#F3F4F6", "#374151" };
-                case "CAMERA": case "IMAGE": return new[] { g(0xE722), "#ECFDF5", "#059669" };
-                case "USB": return new[] { g(0xE88E), "#FEF3C7", "#B45309" };
-                case "BATTERY": return new[] { g(0xE83F), "#ECFDF5", "#059669" };
-                case "SCSIADAPTER": case "HDCONTROLLER": case "DISKDRIVE": return new[] { g(0xEDA2), "#F1F5F9", "#475569" };
-                case "COMPUTEACCELERATOR": case "PROCESSOR": return new[] { g(0xE950), "#F5F3FF", "#7C3AED" };
-                case "HIDCLASS": return new[] { g(0xE772), "#F3F4F6", "#374151" };
-                default: return new[] { g(0xE950), "#F1F5F9", "#475569" };
-            }
+            Func<string, bool> has = rx => Regex.IsMatch(n, rx, RegexOptions.IgnoreCase);
+            string[] graphics = { g(0xE7F4), "#EEF2FF", "#4F46E5" };      // indigo
+            string[] monitor  = { g(0xE7F4), "#CCFBF1", "#0F766E" };      // teal
+            string[] wifi     = { g(0xE701), "#E0F2FE", "#0284C7" };      // sky
+            string[] lan      = { g(0xE839), "#E0F2FE", "#0284C7" };
+            string[] bt       = { g(0xE702), "#E0E7FF", "#4338CA" };      // blue-violet
+            string[] audio    = { g(0xE767), "#FCE7F3", "#DB2777" };      // pink
+            string[] camera   = { g(0xE722), "#ECFDF5", "#059669" };      // emerald
+            string[] keyboard = { g(0xE765), "#F5F3FF", "#7C3AED" };      // violet (input)
+            string[] mouse    = { g(0xE962), "#F5F3FF", "#7C3AED" };
+            string[] usb      = { g(0xE88E), "#FEF3C7", "#B45309" };      // amber
+            string[] storage  = { g(0xEDA2), "#FFEDD5", "#C2410C" };      // orange
+            string[] battery  = { g(0xE83F), "#F0FDF4", "#16A34A" };      // green
+            string[] security = { g(0xE72E), "#FEE2E2", "#B91C1C" };      // red
+            string[] ai       = { g(0xE950), "#FAE8FF", "#A21CAF" };      // fuchsia
+            string[] sensor   = { g(0xE950), "#ECFEFF", "#0E7490" };      // cyan
+            string[] system   = { g(0xE950), "#F1F5F9", "#475569" };      // slate (chipset & platform)
+
+            // the name says most about what a device is
+            if (c == "MONITOR" || has(@"\bMonitor\b|\(DisplayPort\)|\(HDMI\)")) return monitor;
+            if (c == "DISPLAY" || has(@"Graphics|GeForce|Radeon|\bArc\b|\bRTX\b")) return graphics;
+            if (has(@"Bluetooth")) return bt;
+            if (has(@"Wi-?Fi|Wireless|WLAN|802\.11|Killer")) return wifi;
+            if (c == "NET" || has(@"Ethernet|\bLAN\b|Network")) return lan;
+            if (c == "MEDIA" || c == "AUDIOENDPOINT" || has(@"Audio|Sound|Speaker|Microphone|SST|Smart Sound")) return audio;
+            if (c == "CAMERA" || c == "IMAGE" || has(@"Camera|Webcam")) return camera;
+            if (c == "KEYBOARD" || has(@"Keyboard")) return keyboard;
+            if (c == "MOUSE" || has(@"Mouse|Touchpad|Precision|Pen|Touch")) return mouse;
+            if (c == "COMPUTEACCELERATOR" || has(@"\bNPU\b|AI Boost|\bGNA\b")) return ai;
+            if (c == "SCSIADAPTER" || c == "HDC" || c == "HDCONTROLLER" || c == "DISKDRIVE" || has(@"Storage|\bRST\b|VMD|NVMe|SATA|RAID|Card Reader")) return storage;
+            if (c == "USB" || has(@"\bUSB\b|Thunderbolt|USB4")) return usb;
+            if (c == "BATTERY" || has(@"Battery|Power|Charg")) return battery;
+            if (c == "SECURITYDEVICES" || c == "FIRMWARE" || has(@"Management Engine|Security|\bTPM\b|Firmware|BIOS")) return security;
+            if (c == "SENSOR" || has(@"Sensor|Accelerometer|Light Sensor|Integrated Sensor")) return sensor;
+            if (c == "HIDCLASS") return mouse;
+            return system;
         }
     }
 
@@ -563,6 +589,8 @@ namespace DriverUpdater
                 }
                 r.Kind = kind;
                 r.Installed = it.Installed;
+                var dev = Inventory.FirstOrDefault(x => string.Equals(x.Key, r.Key, StringComparison.OrdinalIgnoreCase));
+                if (dev != null) r.Hint = dev.Hint;      // hints follow the current rules, not the ones the scan was saved with
                 if (kind == "NotScanned") continue;
                 AddResult(r, false);
                 shown++;

@@ -223,7 +223,7 @@ namespace DriverUpdater
                     string inf = (o["InfName"] as string) ?? "";
                     d.BuiltIn = d.Provider.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase)
                              || (inf.Length > 0 && !inf.StartsWith("oem", StringComparison.OrdinalIgnoreCase));
-                    d.Hint = Util.VendorHint(d.Manufacturer + " " + d.Provider + " " + d.Name, pcMaker);
+                    d.Hint = Util.VendorHint(d.Manufacturer + " " + d.Provider + " " + d.Name, pcMaker, d.Key, d.Class);
                     list.Add(d);
                 }
             return list;
