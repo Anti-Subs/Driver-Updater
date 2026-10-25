@@ -1,4 +1,4 @@
-Add-Type -Path ../src/Core.cs -ErrorAction Stop
+Add-Type -Path ./src/Core.cs -ErrorAction Stop
 $fail = 0
 function Check($name, $cond) { if ($cond) { "  ok   $name" } else { "  FAIL $name"; $script:fail++ } }
 
@@ -27,6 +27,10 @@ Check 'when yesterday' ([DriverUpdater.Util]::FormatWhen([datetime]'2026-10-21 0
 Check 'when older' ([DriverUpdater.Util]::FormatWhen([datetime]'2026-10-19 20:25', $now) -eq '19 Oct, 20:25')
 Check 'age' ([DriverUpdater.Util]::Age([datetime]'2026-10-22 19:35', $now) -eq '2 hours ago')
 Check 'hint asus audio' ([DriverUpdater.Util]::VendorHint('Realtek High Definition Audio', 'ASUSTeK COMPUTER INC.') -eq 'MyASUS')
+Check 'hint monitor none' ([DriverUpdater.Util]::VendorHint('Alienware Alienware Alienware 34 Curved QD-OLED Gaming Monitor', 'ASUSTeK COMPUTER INC.') -eq '')
+Check 'hint generic display none' ([DriverUpdater.Util]::VendorHint('(Standard monitor types) Microsoft Generic PnP Monitor', 'ASUSTeK COMPUTER INC.') -eq '')
+Check 'usb ids' ([DriverUpdater.Util]::IsUsbDeviceId('USB\VID_05AC&PID_12A8\abc') -and [DriverUpdater.Util]::IsUsbDeviceId('USBSTOR\Disk&Ven_SanDisk\1') -and [DriverUpdater.Util]::IsUsbDeviceId('HID\VID_046D&PID_C52B&MI_00\7') -and [DriverUpdater.Util]::IsUsbDeviceId('SWD\WPDBUSENUM\_??_USBSTOR#DISK') -and [DriverUpdater.Util]::IsUsbDeviceId('STORAGE\VOLUME\_??_USBSTOR#DISK&VEN_X'))
+Check 'non-usb ids' (-not [DriverUpdater.Util]::IsUsbDeviceId('PCI\VEN_8086&DEV_7D55\3') -and -not [DriverUpdater.Util]::IsUsbDeviceId('HID\{00001124-0000-1000-8000-00805F9B34FB}_VID&0002046D') -and -not [DriverUpdater.Util]::IsUsbDeviceId('DISPLAY\DELA1B2\5') -and -not [DriverUpdater.Util]::IsUsbDeviceId(''))
 Check 'hint intel' ([DriverUpdater.Util]::VendorHint('Intel Corporation Intel(R) Arc', 'ASUSTeK COMPUTER INC.') -eq 'Intel Driver & Support Assistant')
 
 "Driver list"

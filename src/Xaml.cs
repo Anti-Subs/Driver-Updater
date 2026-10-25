@@ -302,6 +302,7 @@ namespace DriverUpdater
             <WrapPanel>
               <Button x:Name=""BtnRestore"" Content=""System Restore"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
               <Button x:Name=""BtnDevMgr"" Content=""Device Manager"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
+              <Button x:Name=""BtnOldUsb"" Content=""Remove old USB devices..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10"" ToolTip=""Clears USB devices Windows remembers but that aren't plugged in now""/>
               <Button x:Name=""BtnExport"" Content=""Save driver list..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
               <Button x:Name=""BtnLog"" Content=""Open log folder"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
             </WrapPanel>

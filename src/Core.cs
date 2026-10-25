@@ -133,10 +133,21 @@ namespace DriverUpdater
 
         public static string Plural(int n, string word) { return n + " " + word + (n == 1 ? "" : "s"); }
 
+        /// <summary>True for device IDs that belong to something plugged in over USB (the device itself,
+        /// its storage, its keyboard/mouse part, or the phone/media entry Windows makes for it).</summary>
+        public static bool IsUsbDeviceId(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            string u = id.ToUpperInvariant();
+            return u.StartsWith(@"USB\") || u.StartsWith(@"USBSTOR\") || u.StartsWith(@"HID\VID_")
+                || u.StartsWith(@"SWD\WPDBUSENUM\") || u.Contains("USBSTOR#");
+        }
+
         /// <summary>Which official tool usually has newer builds for this driver.</summary>
         public static string VendorHint(string text, string pcMaker)
         {
             text = text ?? ""; pcMaker = pcMaker ?? "";
+            if (Regex.IsMatch(text, @"\b(Monitor|Display)\b", RegexOptions.IgnoreCase) && !Regex.IsMatch(text, "NVIDIA|Intel|AMD|Radeon|Graphics|Adapter", RegexOptions.IgnoreCase)) return "";
             bool asus = Regex.IsMatch(pcMaker, "ASUS", RegexOptions.IgnoreCase);
             if (asus && Regex.IsMatch(text, "Realtek|Cirrus|ASUS|Innovation Platform|Platform Controllers|Dynamic Tuning", RegexOptions.IgnoreCase)) return "MyASUS";
             if (Regex.IsMatch(text, "NVIDIA", RegexOptions.IgnoreCase)) return "NVIDIA app";

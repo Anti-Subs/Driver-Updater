@@ -519,6 +519,72 @@ namespace DriverUpdater
         }
     }
 
+    /// <summary>USB devices Windows remembers but that aren't plugged in now.</summary>
+    public static class OldDevices
+    {
+        public class Entry { public string Id, Name; }
+
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] static extern int CM_Locate_DevNodeW(out uint devInst, string deviceId, uint flags);
+        [DllImport("cfgmgr32.dll")] static extern int CM_Get_DevNode_Status(out uint status, out uint problem, uint devInst, uint flags);
+        [DllImport("cfgmgr32.dll")] static extern int CM_Uninstall_DevNode(uint devInst, uint flags);
+        const uint CM_LOCATE_DEVNODE_PHANTOM = 1;
+        const int CR_SUCCESS = 0;
+
+        public static List<Entry> Find()
+        {
+            var list = new List<Entry>();
+            var rows = Query("SELECT DeviceID, Name, Present FROM Win32_PnPEntity", true)
+                    ?? Query("SELECT DeviceID, Name, ConfigManagerErrorCode FROM Win32_PnPEntity", false)
+                    ?? new List<Entry>();
+            foreach (var e in rows)
+                if (Util.IsUsbDeviceId(e.Id) && !IsConnected(e.Id)) list.Add(e);
+            return list.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        static List<Entry> Query(string wql, bool hasPresent)
+        {
+            try
+            {
+                var list = new List<Entry>();
+                using (var s = new ManagementObjectSearcher(wql))
+                    foreach (ManagementObject o in s.Get())
+                    {
+                        bool gone = hasPresent ? (o["Present"] is bool && !(bool)o["Present"])
+                                               : Convert.ToInt32(o["ConfigManagerErrorCode"] ?? 0) == 45;
+                        if (!gone) continue;
+                        string id = o["DeviceID"] as string;
+                        string name = (o["Name"] as string) ?? "";
+                        list.Add(new Entry { Id = id, Name = name.Length > 0 ? name : id });
+                    }
+                return list;
+            }
+            catch (Exception ex) { Log.Write("Old device query failed (" + wql + "): " + ex.Message); return null; }
+        }
+
+        /// <summary>Safety check straight from Plug and Play: a device that is attached is never touched.</summary>
+        static bool IsConnected(string id)
+        {
+            uint dev, status, problem;
+            if (CM_Locate_DevNodeW(out dev, id, CM_LOCATE_DEVNODE_PHANTOM) != CR_SUCCESS) return true;   // unknown -> leave it
+            return CM_Get_DevNode_Status(out status, out problem, dev, 0) == CR_SUCCESS;
+        }
+
+        /// <summary>Removes one remembered device. Windows sets it up again next time it's plugged in.</summary>
+        public static bool Remove(string id)
+        {
+            try
+            {
+                if (IsConnected(id)) return false;
+                uint dev;
+                if (CM_Locate_DevNodeW(out dev, id, CM_LOCATE_DEVNODE_PHANTOM) != CR_SUCCESS) return false;
+                int cr = CM_Uninstall_DevNode(dev, 0);
+                if (cr != CR_SUCCESS) Log.Write("Couldn't remove " + id + " (CR " + cr + ")");
+                return cr == CR_SUCCESS;
+            }
+            catch (Exception ex) { Log.Write("Couldn't remove " + id + ": " + ex.Message); return false; }
+        }
+    }
+
     public static class DriverStore
     {
         /// <summary>All driver versions present in Windows' driver store (from "pnputil /enum-drivers").</summary>

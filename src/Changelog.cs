@@ -17,6 +17,9 @@ namespace DriverUpdater
     {
         static readonly string[][] Raw =
         {
+            new[] { "3.4.3", "25 Oct 2026",
+                "New in Tools: 'Remove old USB devices' clears USB devices Windows remembers but that aren't plugged in (they stop pulling in driver offers like Apple's USB driver)",
+                "Monitors no longer point you at your PC maker's tool - their drivers are just colour profiles" },
             new[] { "3.4.2", "23 Oct 2026",
                 "All updates download first, then install - a network driver reset can no longer break the other downloads",
                 "Network adapter drivers install last; dropped downloads wait for the connection and retry",

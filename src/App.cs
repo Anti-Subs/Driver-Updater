@@ -286,6 +286,7 @@ namespace DriverUpdater
             Wpf.On(O("BtnDevMgr"), "Click", (s, e) => Sys.OpenUrl("devmgmt.msc"));
             Wpf.On(O("BtnLog"), "Click", (s, e) => { Directory.CreateDirectory(Paths.WorkDir); Sys.OpenUrl(Paths.WorkDir); });
             Wpf.On(O("BtnExport"), "Click", (s, e) => Export());
+            Wpf.On(O("BtnOldUsb"), "Click", (s, e) => { if (!busy) CleanOldUsb(); });
 
             Action<object, EventArgs> cardClick = (s, e) =>
             {
@@ -913,6 +914,60 @@ namespace DriverUpdater
                 }
             }
             Sys.OpenUrl(d.Url);
+        }
+
+        // ---------------------------------------------------------------- old USB devices
+        void CleanOldUsb()
+        {
+            string prev = mode;
+            mode = "tool";
+            dynamic bar = E("InstallProgress");
+            bar.Visibility = Wpf.Vis(true);
+            Progress(bar, 0, 1, true);
+            Footer("Looking for USB devices that aren't plugged in...");
+            Run(() =>
+            {
+                var found = OldDevices.Find();
+                Log.Write("Old USB devices found: " + found.Count);
+                Post(() =>
+                {
+                    Action done = () => { mode = prev; E("InstallProgress").Visibility = Wpf.VisName("Hidden"); SetBusy(false); };
+                    if (found.Count == 0)
+                    {
+                        done(); Footer("No old USB devices found.");
+                        Native.Ask("Windows isn't remembering any USB devices that are unplugged right now. Nothing to clear.", "Driver Updater", Native.OK, Native.INFO);
+                        return;
+                    }
+                    var names = found.Select(f => f.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    string shown = string.Join("\n", names.Take(15).Select(n => "  \u2022 " + n)) + (names.Count > 15 ? "\n  ...and " + (names.Count - 15) + " more" : "");
+                    int ans = Native.Ask("Windows remembers " + Util.Plural(found.Count, "USB device") + " that aren't plugged in now:\n\n" + shown +
+                        "\n\nRemove them? Devices that are plugged in are never touched. Anything you plug in again is set up automatically, " +
+                        "though it may get a new drive letter or COM port number.", "Remove old USB devices", Native.YESNO, Native.QUESTION);
+                    if (ans != Native.IDYES) { done(); Footer(" "); return; }
+                    Progress(bar, 0, found.Count, false);
+                    Footer("Removing old USB devices...");
+                    Run(() =>
+                    {
+                        int ok = 0, n = 0;
+                        foreach (var f in found)
+                        {
+                            if (OldDevices.Remove(f.Id)) ok++;
+                            int k = ++n;
+                            Post(() => Progress(E("InstallProgress"), k, found.Count, false));
+                        }
+                        Log.Write("Old USB devices removed: " + ok + " of " + found.Count);
+                        Post(() =>
+                        {
+                            done();
+                            Footer("Removed " + Util.Plural(ok, "old USB device") + ".");
+                            string msg = ok == found.Count ? "Done - removed " + Util.Plural(ok, "old USB device") + "."
+                                       : "Removed " + ok + " of " + found.Count + ". Windows kept the rest (details are in the log).";
+                            if (Native.Ask(msg + "\n\nScan again now? Updates offered only for those old devices should disappear.", "Remove old USB devices", Native.YESNO, Native.INFO) == Native.IDYES)
+                            { ShowPage("Drivers"); StartScan(); }
+                        });
+                    });
+                });
+            });
         }
 
         // ---------------------------------------------------------------- export
