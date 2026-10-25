@@ -180,6 +180,62 @@ namespace DriverUpdater
         </Grid>
       </Border>
     </DataTemplate>
+    <!-- Thin modern scrollbar (vertical) and a clear checkbox; both follow light/dark colours -->
+    <Style TargetType=""ScrollBar"">
+      <Style.Triggers>
+        <Trigger Property=""Orientation"" Value=""Vertical"">
+          <Setter Property=""Width"" Value=""12""/>
+          <Setter Property=""MinWidth"" Value=""12""/>
+          <Setter Property=""Template"">
+            <Setter.Value>
+              <ControlTemplate TargetType=""ScrollBar"">
+                <Grid Background=""Transparent"">
+                  <Track x:Name=""PART_Track"" IsDirectionReversed=""True"">
+                    <Track.Thumb>
+                      <Thumb>
+                        <Thumb.Template>
+                          <ControlTemplate TargetType=""Thumb"">
+                            <Border x:Name=""th"" CornerRadius=""4"" Background=""#D1D5DB"" Margin=""3,2""/>
+                            <ControlTemplate.Triggers>
+                              <Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""th"" Property=""Background"" Value=""#9CA3AF""/></Trigger>
+                              <Trigger Property=""IsDragging"" Value=""True""><Setter TargetName=""th"" Property=""Background"" Value=""#6B7280""/></Trigger>
+                            </ControlTemplate.Triggers>
+                          </ControlTemplate>
+                        </Thumb.Template>
+                      </Thumb>
+                    </Track.Thumb>
+                  </Track>
+                </Grid>
+              </ControlTemplate>
+            </Setter.Value>
+          </Setter>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <Style TargetType=""CheckBox"">
+      <Setter Property=""Cursor"" Value=""Hand""/>
+      <Setter Property=""Template"">
+        <Setter.Value>
+          <ControlTemplate TargetType=""CheckBox"">
+            <StackPanel Orientation=""Horizontal"" Background=""Transparent"">
+              <Border x:Name=""box"" Width=""18"" Height=""18"" CornerRadius=""5"" BorderThickness=""1.5"" BorderBrush=""#9CA3AF"" Background=""White"" VerticalAlignment=""Center"">
+                <TextBlock x:Name=""tick"" Text=""&#xE73E;"" FontFamily=""Segoe MDL2 Assets"" FontSize=""11"" Foreground=""White"" HorizontalAlignment=""Center"" VerticalAlignment=""Center"" Visibility=""Collapsed""/>
+              </Border>
+              <ContentPresenter Margin=""8,0,0,0"" VerticalAlignment=""Center""/>
+            </StackPanel>
+            <ControlTemplate.Triggers>
+              <Trigger Property=""IsChecked"" Value=""True"">
+                <Setter TargetName=""box"" Property=""Background"" Value=""#2563EB""/>
+                <Setter TargetName=""box"" Property=""BorderBrush"" Value=""#2563EB""/>
+                <Setter TargetName=""tick"" Property=""Visibility"" Value=""Visible""/>
+              </Trigger>
+              <Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""box"" Property=""BorderBrush"" Value=""#2563EB""/></Trigger>
+              <Trigger Property=""IsEnabled"" Value=""False""><Setter Property=""Opacity"" Value=""0.5""/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
   </Window.Resources>
 
   <Grid>
@@ -315,6 +371,7 @@ namespace DriverUpdater
               <Button x:Name=""BtnDevMgr"" Content=""Device Manager"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
               <Button x:Name=""BtnOldUsb"" Content=""Remove old USB devices..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10"" ToolTip=""Clears USB devices Windows remembers but that aren't plugged in now""/>
               <Button x:Name=""BtnExport"" Content=""Save driver list..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
+              <Button x:Name=""BtnHwReport"" Content=""Save hardware report..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10"" ToolTip=""Your PC's maker, model and devices (no personal data) - share it to get more makers' driver catalogs added""/>
               <Button x:Name=""BtnLog"" Content=""Open log folder"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
             </WrapPanel>
             <TextBlock Text=""Manufacturer tools"" FontSize=""24"" FontWeight=""SemiBold"" Foreground=""#111827"" Margin=""0,18,0,0""/>
@@ -438,6 +495,62 @@ namespace DriverUpdater
                 <Setter TargetName=""bd"" Property=""BorderBrush"" Value=""#2563EB""/>
               </Trigger>
               <Trigger Property=""IsEnabled"" Value=""False""><Setter TargetName=""bd"" Property=""Opacity"" Value=""0.45""/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <!-- Thin modern scrollbar (vertical) and a clear checkbox; both follow light/dark colours -->
+    <Style TargetType=""ScrollBar"">
+      <Style.Triggers>
+        <Trigger Property=""Orientation"" Value=""Vertical"">
+          <Setter Property=""Width"" Value=""12""/>
+          <Setter Property=""MinWidth"" Value=""12""/>
+          <Setter Property=""Template"">
+            <Setter.Value>
+              <ControlTemplate TargetType=""ScrollBar"">
+                <Grid Background=""Transparent"">
+                  <Track x:Name=""PART_Track"" IsDirectionReversed=""True"">
+                    <Track.Thumb>
+                      <Thumb>
+                        <Thumb.Template>
+                          <ControlTemplate TargetType=""Thumb"">
+                            <Border x:Name=""th"" CornerRadius=""4"" Background=""#D1D5DB"" Margin=""3,2""/>
+                            <ControlTemplate.Triggers>
+                              <Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""th"" Property=""Background"" Value=""#9CA3AF""/></Trigger>
+                              <Trigger Property=""IsDragging"" Value=""True""><Setter TargetName=""th"" Property=""Background"" Value=""#6B7280""/></Trigger>
+                            </ControlTemplate.Triggers>
+                          </ControlTemplate>
+                        </Thumb.Template>
+                      </Thumb>
+                    </Track.Thumb>
+                  </Track>
+                </Grid>
+              </ControlTemplate>
+            </Setter.Value>
+          </Setter>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <Style TargetType=""CheckBox"">
+      <Setter Property=""Cursor"" Value=""Hand""/>
+      <Setter Property=""Template"">
+        <Setter.Value>
+          <ControlTemplate TargetType=""CheckBox"">
+            <StackPanel Orientation=""Horizontal"" Background=""Transparent"">
+              <Border x:Name=""box"" Width=""18"" Height=""18"" CornerRadius=""5"" BorderThickness=""1.5"" BorderBrush=""#9CA3AF"" Background=""White"" VerticalAlignment=""Center"">
+                <TextBlock x:Name=""tick"" Text=""&#xE73E;"" FontFamily=""Segoe MDL2 Assets"" FontSize=""11"" Foreground=""White"" HorizontalAlignment=""Center"" VerticalAlignment=""Center"" Visibility=""Collapsed""/>
+              </Border>
+              <ContentPresenter Margin=""8,0,0,0"" VerticalAlignment=""Center""/>
+            </StackPanel>
+            <ControlTemplate.Triggers>
+              <Trigger Property=""IsChecked"" Value=""True"">
+                <Setter TargetName=""box"" Property=""Background"" Value=""#2563EB""/>
+                <Setter TargetName=""box"" Property=""BorderBrush"" Value=""#2563EB""/>
+                <Setter TargetName=""tick"" Property=""Visibility"" Value=""Visible""/>
+              </Trigger>
+              <Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""box"" Property=""BorderBrush"" Value=""#2563EB""/></Trigger>
+              <Trigger Property=""IsEnabled"" Value=""False""><Setter Property=""Opacity"" Value=""0.5""/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>

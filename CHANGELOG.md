@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.7.2 - 26 Oct 2026
+- Slim scrollbar and clearer tick boxes that match light and dark mode
+- AMD chipset devices (GPIO, 3D V-Cache, PCI...) point to AMD's chipset drivers instead of the Radeon graphics app
+- Update check finds the official repository by its permanent GitHub number, so renaming the account can't break or redirect it
+- When Microsoft's catalog limits searches, the drivers it skipped are checked again automatically a few minutes later - no need to scan again
+- Tools: 'Save hardware report' - your PC's maker, model and devices (no personal data), to share so more makers' catalogs can be added
+
 ## 3.7.1 - 25 Oct 2026
 Includes everything from 3.5.3, 3.6.1 and 3.7.0.
 

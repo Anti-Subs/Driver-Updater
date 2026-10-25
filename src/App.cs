@@ -346,6 +346,7 @@ namespace DriverUpdater
             Wpf.On(O("BtnDevMgr"), "Click", (s, e) => Sys.OpenUrl("devmgmt.msc"));
             Wpf.On(O("BtnLog"), "Click", (s, e) => { Directory.CreateDirectory(Paths.WorkDir); Sys.OpenUrl(Paths.WorkDir); });
             Wpf.On(O("BtnExport"), "Click", (s, e) => Export());
+            Wpf.On(O("BtnHwReport"), "Click", (s, e) => ExportHardwareReport());
             Wpf.On(O("BtnOldUsb"), "Click", (s, e) => { if (!busy) CleanOldUsb(); });
             Wpf.On(O("BtnUpdNow"), "Click", (s, e) => StartAppUpdate());
             Wpf.On(O("BtnUpdLater"), "Click", (s, e) => { if (appRelease != null) SelfUpdate.Dismiss(appRelease.Version); E("UpdateBanner").Visibility = Wpf.Vis(false); });
@@ -571,6 +572,7 @@ namespace DriverUpdater
         void StartScan()
         {
             if (list.Inventory.Count == 0) return;
+            recheckRound++; recheckAttempts = 0;
             list.Reset("Waiting");
             cancel = false;
             mode = "scanning";
@@ -696,7 +698,7 @@ namespace DriverUpdater
                 report(res);
             }
             // One quick retry for drivers Microsoft refused, after a short pause
-            if (refused.Count > 0 && !cancel)
+            if (refused.Count > 0 && !cancel && CatalogClient.BusyUntil <= DateTime.Now)
             {
                 catalog.PrepareRetry(20);
                 for (int i = 0; i < refused.Count && !cancel; i++)
@@ -758,11 +760,86 @@ namespace DriverUpdater
             int nUpd = list.Count("Update"), nUnk = list.Count("Unknown");
             string when = lastScan.Value.ToString("HH:mm", CultureInfo.InvariantCulture);
             if (wasCancelled) Footer("Scan stopped at " + when + ". Drivers that weren't checked show 'Not scanned yet'.");
-            else if (nUnk > 0) Footer("Scanned at " + when + ". Microsoft's catalog is limiting searches, so " + nUnk + " driver(s) weren't checked - scan again in about 15 minutes (checked drivers are remembered).");
+            else if (nUnk > 0) ScheduleRecheck();
             else if (nUpd > 0) Footer("Scanned at " + when + ". Updates are at the top. Every install creates a System Restore point first.");
             else Footer("Scanned at " + when + ". No updates from Microsoft - see Tools for drivers your hardware makers publish first.");
             Log.Write("Scan finished: " + nUpd + " updates, " + nUnk + " not checked, cancelled=" + wasCancelled + ".");
             ScanStore.Save(lastScan.Value, list.Data.Values);
+        }
+
+        // ---------------------------------------------------------------- automatic re-check of drivers Microsoft didn't answer for
+        int recheckRound;          // a new scan or a new schedule makes older waiting re-checks give up
+        int recheckAttempts;
+
+        /// <summary>Checks the "Not checked" drivers again by itself once Microsoft is ready, so nobody has to remember to scan again.</summary>
+        void ScheduleRecheck()
+        {
+            int nUnk = list.Count("Unknown");
+            if (nUnk == 0) { recheckAttempts = 0; return; }
+            if (recheckAttempts >= 4)
+            {
+                Footer("Microsoft's catalog is still limiting searches, so " + Util.Plural(nUnk, "driver") + " couldn't be checked. Try 'Scan again' later.");
+                return;
+            }
+            DateTime due = CatalogClient.BusyUntil;
+            DateTime soonest = DateTime.Now.AddMinutes(recheckAttempts == 0 ? 2 : 5 * recheckAttempts);
+            if (due < soonest) due = soonest;
+            int round = ++recheckRound;
+            Footer("Microsoft's catalog is limiting searches. " + Util.Plural(nUnk, "driver") + " will be checked again automatically at " +
+                   due.ToString("HH:mm", CultureInfo.InvariantCulture) + " - you can keep using the app or close it.");
+            Log.Write("Re-check of " + nUnk + " unchecked driver(s) scheduled for " + due.ToString("HH:mm", CultureInfo.InvariantCulture));
+            new Thread(() =>
+            {
+                while (DateTime.Now < due || busy)
+                {
+                    Thread.Sleep(2000);
+                    if (round != recheckRound) return;
+                }
+                Post(() => { if (round == recheckRound && !busy) RunRecheck(); });
+            }) { IsBackground = true }.Start();
+        }
+
+        void RunRecheck()
+        {
+            var keys = new HashSet<string>(list.Rows.OfType<DriverItem>().Where(i => i.State == "Unknown").Select(i => i.Key), StringComparer.OrdinalIgnoreCase);
+            var devs = list.Inventory.Where(d => keys.Contains(d.Key)).ToList();
+            if (devs.Count == 0) return;
+            recheckAttempts++;
+            Log.Write("Re-checking " + devs.Count + " driver(s) Microsoft didn't answer for (attempt " + recheckAttempts + ").");
+            foreach (var d in devs) { DriverItem it; if (list.ByKey.TryGetValue(d.Key, out it)) it.ApplyState("Checking", null, false); }
+            Footer("Checking " + Util.Plural(devs.Count, "driver") + " Microsoft didn't answer for earlier...");
+            int round = recheckRound;
+            new Thread(() =>
+            {
+                var catalog = new CatalogClient();
+                catalog.LoadCache();
+                var store = DriverStore.Versions();
+                var kept = KeptStore.Load();
+                var results = new List<ScanResult>();
+                foreach (var d in devs)
+                {
+                    if (round != recheckRound) break;
+                    var r = CatalogResult(catalog, d);
+                    if (r.Kind == "Update") ScanResult.ApplyKeptTo(r, store, kept);
+                    Log.Write("  " + r.Name + ": " + r.Kind + (string.IsNullOrEmpty(r.Latest) ? "" : " (" + r.Latest + ")"));
+                    results.Add(r);
+                    Post(() => { list.AddResult(r, r.Kind == "Update"); UpdateHeader(); });
+                }
+                catalog.SaveCache();
+                Post(() =>
+                {
+                    if (round != recheckRound) return;
+                    if (lastScan.HasValue) ScanStore.Save(lastScan.Value, list.Data.Values);
+                    UpdateHeader();
+                    int found = results.Count(r => r.Kind == "Update"), left = list.Count("Unknown");
+                    if (left > 0) ScheduleRecheck();
+                    else
+                    {
+                        recheckAttempts = 0;
+                        Footer("All drivers checked." + (found > 0 ? " " + Util.Plural(found, "more update") + " found - they're at the top." : " Nothing more to update."));
+                    }
+                });
+            }) { IsBackground = true }.Start();
         }
 
         // ---------------------------------------------------------------- install
@@ -966,7 +1043,7 @@ namespace DriverUpdater
                 new ToolDef { Name = "Intel Driver & Support Assistant", Desc = "Newest Intel graphics, Wi-Fi, Bluetooth, NPU (AI Boost) and chipset drivers, straight from Intel.", WingetId = "Intel.IntelDriverAndSupportAssistant", Url = "https://www.intel.com/content/www/us/en/support/detect.html", Match = m(gpus + " " + cpu, "Intel"), Look = new[] { g(0xE950), "#E0F2FE", "#0369A1" } },
                 new ToolDef { Name = "NVIDIA app", Desc = "Game Ready and Studio drivers for NVIDIA GeForce graphics.", Url = "https://www.nvidia.com/en-us/software/nvidia-app/", Match = m(gpus, "NVIDIA"), Look = new[] { g(0xE7F4), "#ECFDF5", "#15803D" } },
                 new ToolDef { Name = "MyASUS / Armoury Crate", Desc = "ASUS-tuned audio, power, fan and platform drivers made for your exact laptop model.", Url = "https://www.asus.com/support/download-center/", Match = m(pcMaker, "ASUS"), Look = new[] { g(0xE7F8), "#F1F5F9", "#0F172A" } },
-                new ToolDef { Name = "AMD Software: Adrenalin Edition", Desc = "Drivers for AMD Radeon graphics and Ryzen chipsets.", Url = "https://www.amd.com/en/support/download/drivers.html", Match = m(gpus + " " + cpu, "AMD|Radeon"), Look = new[] { g(0xE7F4), "#FEF2F2", "#B91C1C" } },
+                new ToolDef { Name = "AMD Software and chipset drivers", Desc = "AMD Software: Adrenalin Edition for Radeon graphics, and the AMD Chipset Software for Ryzen (GPIO, PCI, power, 3D V-Cache).", Url = "https://www.amd.com/en/support/download/drivers.html", Match = m(gpus + " " + cpu, "AMD|Radeon"), Look = new[] { g(0xE7F4), "#FEF2F2", "#B91C1C" } },
                 new ToolDef { Name = "Dell SupportAssist", Desc = "Drivers and BIOS updates for Dell and Alienware PCs.", Url = "https://www.dell.com/support/home/drivers", Match = m(pcMaker, "Dell|Alienware"), Look = new[] { g(0xE7F8), "#EFF6FF", "#1D4ED8" } },
                 new ToolDef { Name = "HP Support Assistant", Desc = "Drivers and BIOS updates for HP PCs.", Url = "https://support.hp.com/drivers", Match = m(pcMaker, "HP|Hewlett"), Look = new[] { g(0xE7F8), "#EFF6FF", "#0369A1" } },
                 new ToolDef { Name = "Lenovo Vantage", Desc = "Drivers and BIOS updates for Lenovo PCs.", Url = "https://pcsupport.lenovo.com", Match = m(pcMaker, "Lenovo"), Look = new[] { g(0xE7F8), "#FEF2F2", "#B91C1C" } },
@@ -1242,6 +1319,46 @@ namespace DriverUpdater
         }
 
         // ---------------------------------------------------------------- export
+        /// <summary>A file describing this PC's hardware and drivers (no names, serial numbers or personal data),
+        /// to share so support for more makers' catalogs can be added.</summary>
+        void ExportHardwareReport()
+        {
+            if (list.Inventory.Count == 0) { Native.Ask("The driver list is still loading.", "Driver Updater", Native.OK, Native.INFO); return; }
+            Func<string, string, string> w = (q, prop) => Sys.Wmi1(q, prop).Trim();
+            string maker = w("SELECT Manufacturer FROM Win32_ComputerSystem", "Manufacturer"), model = w("SELECT Model FROM Win32_ComputerSystem", "Model");
+            string safe = System.Text.RegularExpressions.Regex.Replace((maker + " " + model).Trim(), @"[^A-Za-z0-9]+", "-").Trim('-');
+            using (var dlg = new System.Windows.Forms.SaveFileDialog { Filter = "Hardware report (*.json)|*.json", FileName = "Hardware_" + (safe.Length > 0 ? safe + "_" : "") + DateTime.Now.ToString("yyyy-MM-dd") + ".json" })
+            {
+                if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                var report = new Dictionary<string, object>
+                {
+                    { "app", App.Version }, { "created", DateTime.Now.ToString("yyyy-MM-dd HH:mm") },
+                    { "windows", osName + " build " + Environment.OSVersion.Version.Build }, { "arm64", isArm },
+                    { "pc", new Dictionary<string, object> {
+                        { "maker", maker }, { "model", model },
+                        { "systemSku", w("SELECT SystemSKUNumber FROM Win32_ComputerSystem", "SystemSKUNumber") },
+                        { "family", w("SELECT SystemFamily FROM Win32_ComputerSystem", "SystemFamily") },
+                        { "type", w("SELECT PCSystemType FROM Win32_ComputerSystem", "PCSystemType") == "2" ? "laptop" : "desktop" } } },
+                    { "board", new Dictionary<string, object> { { "maker", w("SELECT Manufacturer FROM Win32_BaseBoard", "Manufacturer") }, { "product", w("SELECT Product FROM Win32_BaseBoard", "Product") } } },
+                    { "bios", new Dictionary<string, object> { { "vendor", w("SELECT Manufacturer FROM Win32_BIOS", "Manufacturer") }, { "version", w("SELECT SMBIOSBIOSVersion FROM Win32_BIOS", "SMBIOSBIOSVersion") } } },
+                    { "cpu", w("SELECT Name FROM Win32_Processor", "Name") },
+                    { "gpus", Sys.WmiAll("SELECT Name FROM Win32_VideoController", "Name") },
+                    { "devices", list.Inventory.Select(d =>
+                        {
+                            ScanResult r; list.Data.TryGetValue(d.Key, out r);
+                            return (object)new Dictionary<string, object> {
+                                { "name", d.Name }, { "class", d.Class }, { "maker", d.Manufacturer }, { "provider", d.Provider }, { "version", d.Version },
+                                { "hardwareIds", d.HardwareIds }, { "status", r != null ? r.Kind : "NotScanned" },
+                                { "source", r != null ? r.Source : "" }, { "latest", r != null ? r.Latest : "" } };
+                        }).ToList() }
+                };
+                File.WriteAllText(dlg.FileName, Json.Write(report), new System.Text.UTF8Encoding(false));
+                Footer("Saved hardware report to " + dlg.FileName);
+                Native.Ask("Hardware report saved.\n\nIt lists this PC's maker, model and devices with their driver versions and hardware IDs - no PC name, user name or serial numbers.",
+                           "Driver Updater", Native.OK, Native.INFO);
+            }
+        }
+
         void Export()
         {
             if (list.Rows.Count == 0) { Native.Ask("The driver list is still loading.", "Driver Updater", Native.OK, Native.INFO); return; }
