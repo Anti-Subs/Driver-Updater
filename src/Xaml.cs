@@ -123,7 +123,7 @@ namespace DriverUpdater
                   </StackPanel>
                 </Border>
                 <TextBlock Text=""{Binding VersionLine}"" FontSize=""12"" Foreground=""#6B7280"" Margin=""0,0,14,0"" VerticalAlignment=""Center""/>
-                <TextBlock Text=""{Binding Size}"" FontSize=""12"" Foreground=""#9CA3AF"" VerticalAlignment=""Center""/>
+                <TextBlock Text=""{Binding Size}"" FontSize=""12"" Foreground=""#9CA3AF"" VerticalAlignment=""Center"" TextWrapping=""Wrap""/>
               </WrapPanel>
             </StackPanel>
             <StackPanel Grid.Column=""3"" Orientation=""Horizontal"" VerticalAlignment=""Center"" Margin=""12,0,0,0"">

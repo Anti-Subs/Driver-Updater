@@ -828,7 +828,8 @@ namespace DriverUpdater
                 {
                     fail++;
                     t.ApplyState("Update", d, false);
-                    t.SetTag(r != null ? r.Message : "Not installed", "#FEE2E2", "#B91C1C");
+                    t.SetTag("Not installed", "#FEE2E2", "#B91C1C");
+                    if (r != null && !string.IsNullOrEmpty(r.Message)) t.Size = r.Message.Length > 160 ? r.Message.Substring(0, 157) + "..." : r.Message;
                 }
             }
             UpdateHeader();

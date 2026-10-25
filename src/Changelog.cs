@@ -17,6 +17,9 @@ namespace DriverUpdater
     {
         static readonly string[][] Raw =
         {
+            new[] { "3.5.1", "25 Oct 2026",
+                "Fixed 'file already exists' when unpacking some Intel and ASUS packages (leftovers from an earlier try, or a file listed twice in the package)",
+                "A failed update keeps the driver's name visible; the reason is shown underneath instead of covering the row" },
             new[] { "3.5.0", "25 Oct 2026",
                 "New 'Reinstall' button on up-to-date drivers: puts the same version back from the copy Windows keeps (no download) - handy when a device misbehaves" },
             new[] { "3.4.3", "25 Oct 2026",

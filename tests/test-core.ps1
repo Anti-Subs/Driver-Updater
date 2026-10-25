@@ -1,4 +1,4 @@
-Add-Type -Path ./src/Core.cs -ErrorAction Stop
+Add-Type -Path ../src/Core.cs -ErrorAction Stop
 $fail = 0
 function Check($name, $cond) { if ($cond) { "  ok   $name" } else { "  FAIL $name"; $script:fail++ } }
 
