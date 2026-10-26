@@ -242,7 +242,8 @@ namespace DriverUpdater
             if (asus && !external && Regex.IsMatch(text, "Realtek|Cirrus|ASUS|Innovation Platform|Platform Controllers|Dynamic Tuning", RegexOptions.IgnoreCase)) return "MyASUS";
             if (Regex.IsMatch(text, "NVIDIA", RegexOptions.IgnoreCase)) return "NVIDIA app";
             if (Regex.IsMatch(text, "Intel", RegexOptions.IgnoreCase)) return "Intel Driver & Support Assistant";
-            if (Regex.IsMatch(text, "AMD|Radeon", RegexOptions.IgnoreCase)) return "AMD Software";
+            if (Regex.IsMatch(text, "Radeon|AMD.*(Graphics|High Definition Audio)", RegexOptions.IgnoreCase)) return "AMD Software";
+            if (Regex.IsMatch(text, @"\bAMD\b|Advanced Micro Devices", RegexOptions.IgnoreCase)) return "AMD chipset drivers";
             if (external) return "";      // plug-in devices come from their own maker, not the PC maker
             if (Regex.IsMatch(pcMaker, "Dell|Alienware", RegexOptions.IgnoreCase)) return "Dell SupportAssist";
             if (Regex.IsMatch(pcMaker, "HP|Hewlett", RegexOptions.IgnoreCase)) return "HP Support Assistant";

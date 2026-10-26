@@ -2,7 +2,7 @@
 
 A small native Windows app that scans a PC's drivers and installs newer versions from official sources only.
 
-**Download:** get `DriverUpdaterSetup-<version>.exe` from the [latest release](https://github.com/Anti-Subs/Driver-Updater/releases/latest).
+**Download:** get `DriverUpdaterSetup-<version>.exe` from the [latest release](https://github.com/Sub-Away/Driver-Updater/releases/latest).
 
 > This is a personal project. Contributions, pull requests and issues aren't accepted.
 

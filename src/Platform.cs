@@ -398,16 +398,31 @@ namespace DriverUpdater
         }
 
         int refusedInARow;
+        DateTime busyUntil = BusyUntil;
 
         /// <summary>
         /// Results for a query, or null when Microsoft refused it. A refusal never stalls the scan:
         /// the search is skipped for now (Unknown) and the app slows down; RetryRefused() tries again once at the end.
         /// </summary>
+        /// <summary>After Microsoft refuses several searches in a row, new searches wait until this time (remembered
+        /// across scans and restarts), because asking again sooner only makes Microsoft wait longer.</summary>
+        public static DateTime BusyUntil
+        {
+            get
+            {
+                DateTime t;
+                return DateTime.TryParse(Settings.Get("catalogBusyUntil", ""), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out t) ? t.ToLocalTime() : DateTime.MinValue;
+            }
+            set { Settings.Set("catalogBusyUntil", value.ToUniversalTime().ToString("o")); }
+        }
+        public const int BusyMinutes = 8;
+
         public List<CatalogEntry> Search(string query)
         {
             List<CatalogEntry> hit;
             if (cache.TryGetValue(query, out hit)) return hit;
             if (Blocked || Cancelled()) return null;
+            if (DateTime.Now < busyUntil) return null;
             double since = (DateTime.Now - lastRequest).TotalMilliseconds;
             if (since < pace) Thread.Sleep((int)(pace - since));
             lastRequest = DateTime.Now;
@@ -423,7 +438,13 @@ namespace DriverUpdater
             {
                 Log.Write("Catalog refused '" + query + "' - will try again at the end.");
                 pace = 3000;
-                if (++refusedInARow >= 3) { Blocked = true; Log.Write("Catalog keeps refusing - pausing searches until the end of the scan."); }
+                if (++refusedInARow >= 3)
+                {
+                    Blocked = true;
+                    busyUntil = DateTime.Now.AddMinutes(BusyMinutes);
+                    BusyUntil = busyUntil;
+                    Log.Write("Catalog keeps refusing - pausing searches until " + busyUntil.ToString("HH:mm", CultureInfo.InvariantCulture) + ".");
+                }
                 return null;
             }
             refusedInARow = 0;
@@ -745,7 +766,10 @@ namespace DriverUpdater
     /// <summary>Checks GitHub for a newer Driver Updater and installs it.</summary>
     public static class SelfUpdate
     {
-        public const string Repo = "Anti-Subs/Driver-Updater";
+        // The repository's permanent number on GitHub. Unlike the "owner/name" address it never changes when the
+        // account or repository is renamed, and nobody else can take it over.
+        public const long RepoId = 1430214648;
+        public const string Repo = "Sub-Away/Driver-Updater";   // only for the "open the releases page" link
         public static string ReleasesPage { get { return "https://github.com/" + Repo + "/releases/latest"; } }
         static string StateFile { get { return Path.Combine(Paths.StateDir, "app-update.json"); } }
 
@@ -774,7 +798,7 @@ namespace DriverUpdater
                 return Safe(cached);
             try
             {
-                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/" + Repo + "/releases/latest");
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repositories/" + RepoId + "/releases/latest");
                 req.UserAgent = "DriverUpdater/" + App.Version;
                 req.Accept = "application/vnd.github+json";
                 req.Timeout = 15000;
