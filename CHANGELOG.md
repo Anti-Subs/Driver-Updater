@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.3 - 27 Oct 2026
+- Dell: built-in audio (Realtek and other sound chips) is now matched to Dell's drivers too
+- Dell: more time for the first catalog download, and clearer notes in the log
+- Spots drivers made for a different PC maker (e.g. a Lenovo keyboard driver on an ASUS, often left by other driver tools) and offers to switch back to Windows' own driver
+- Never offers another PC maker's driver builds from Microsoft's catalog, and never searches for standard devices every PC has
+
 ## 3.7.2 - 26 Oct 2026
 - Slim scrollbar and clearer tick boxes that match light and dark mode
 - AMD chipset devices (GPIO, 3D V-Cache, PCI...) point to AMD's chipset drivers instead of the Radeon graphics app

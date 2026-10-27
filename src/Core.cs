@@ -90,6 +90,8 @@ namespace DriverUpdater
     public class DeviceInfo
     {
         public string Key, Name, Manufacturer, Class, Version, Provider, Hint;
+        /// <summary>Another PC maker's name when this built-in device uses a driver made for that maker's PCs.</summary>
+        public string Foreign = "";
         public string[] HardwareIds = new string[0];
         public bool BuiltIn;
     }
@@ -229,6 +231,29 @@ namespace DriverUpdater
         }
 
         /// <summary>Which official tool usually has newer builds for this driver.</summary>
+        static readonly string[][] PcMakers =
+        {
+            new[] { "Lenovo", @"\bLenovo\b|\bThinkPad\b" }, new[] { "HP", @"\bHP\b|Hewlett" }, new[] { "Dell", @"\bDell\b|\bAlienware\b" },
+            new[] { "ASUS", @"\bASUS" }, new[] { "Acer", @"\bAcer\b|\bPredator\b" }, new[] { "MSI", @"\bMSI\b|Micro-Star" },
+            new[] { "Samsung", @"\bSamsung\b" }, new[] { "Toshiba", @"\bToshiba\b|\bDynabook\b" }, new[] { "Fujitsu", @"\bFujitsu\b" },
+            new[] { "Razer", @"\bRazer\b" }, new[] { "Gigabyte", @"\bGigabyte\b|\bAORUS\b" },
+        };
+
+        /// <summary>The other PC maker named in a driver's name/title, when it isn't this PC's maker (built-in devices only); otherwise "".</summary>
+        public static string ForeignOem(string text, string pcMaker, string deviceId)
+        {
+            if (string.IsNullOrWhiteSpace(pcMaker) || string.IsNullOrEmpty(text)) return "";
+            if (Regex.IsMatch(deviceId ?? "", @"^(USB|HID|USBSTOR|SWD|BTH|BTHENUM|BTHLE|DISPLAY|MONITOR)\\", RegexOptions.IgnoreCase)) return "";
+            foreach (var m in PcMakers)
+                if (Regex.IsMatch(text, m[1], RegexOptions.IgnoreCase) && !Regex.IsMatch(pcMaker, m[1], RegexOptions.IgnoreCase))
+                {
+                    // the PC's own maker named too (e.g. "Dell ... for Lenovo") - not clear-cut, leave it
+                    if (PcMakers.Any(o => o != m && Regex.IsMatch(pcMaker, o[1], RegexOptions.IgnoreCase) && Regex.IsMatch(text, o[1], RegexOptions.IgnoreCase))) return "";
+                    return m[0];
+                }
+            return "";
+        }
+
         public static string VendorHint(string text, string pcMaker) { return VendorHint(text, pcMaker, null, null); }
 
         /// <param name="deviceId">Device instance ID; plug-in devices (USB, Bluetooth, monitors) never get the PC maker's tool.</param>
@@ -330,8 +355,16 @@ namespace DriverUpdater
         }
 
         /// <summary>The query to search for a device: VEN/DEV (or VID/PID) when available, else its first hardware IDs.</summary>
+        /// <summary>IDs every PC has (standard keyboard, timers, generic HID...). Drivers found for these belong to
+        /// whichever PC maker uploaded them, so they're never searched for.</summary>
+        public static bool IsGenericId(string id)
+        {
+            return Regex.IsMatch(id ?? "", @"^(ACPI\\(VEN_(MSFT|PNP)&|MSFT|PNP)|\*(PNP|MSFT)|HID_DEVICE|HID\\VID_[0-9A-F]{4}&UP:|USB\\CLASS_|USB\\COMPOSITE|SWD\\|ROOT\\)", RegexOptions.IgnoreCase);
+        }
+
         public static List<string> QueriesFor(string[] hardwareIds)
         {
+            hardwareIds = (hardwareIds ?? new string[0]).Where(h => !IsGenericId(h)).ToArray();
             var q = new List<string>();
             var m = Regex.Match(string.Join(" ", hardwareIds ?? new string[0]), "(VEN|VID)_[0-9A-Fa-f]{4}&(DEV|PID)_[0-9A-Fa-f]{4}");
             if (m.Success) q.Add(m.Value);
@@ -340,9 +373,13 @@ namespace DriverUpdater
         }
 
         /// <summary>Newest matching driver for this PC's architecture and Windows version.</summary>
-        public static CatalogEntry Best(IEnumerable<CatalogEntry> entries, bool isArm, string osName)
+        public static CatalogEntry Best(IEnumerable<CatalogEntry> entries, bool isArm, string osName) { return Best(entries, isArm, osName, null); }
+
+        /// <param name="pcMaker">Builds published by a different PC maker (e.g. "Lenovo - Keyboard - ...") are skipped.</param>
+        public static CatalogEntry Best(IEnumerable<CatalogEntry> entries, bool isArm, string osName, string pcMaker)
         {
             var hits = entries.Where(e => Regex.IsMatch(e.Classification ?? "", "Driver") && !string.IsNullOrEmpty(e.Version)).ToList();
+            if (!string.IsNullOrEmpty(pcMaker)) hits = hits.Where(e => Util.ForeignOem(e.Title, pcMaker, null) == "").ToList();
             hits = hits.Where(e => Regex.IsMatch((e.Title ?? "") + " " + (e.Products ?? ""), "ARM64") == isArm).ToList();
             var os = hits.Where(e => (e.Products ?? "").Contains(osName)).ToList();
             if (os.Count > 0) hits = os;
@@ -370,6 +407,8 @@ namespace DriverUpdater
         public string IconBack { get { return _iconBack; } set { _iconBack = Theme.C(value); } }
         public string IconFore { get { return _iconFore; } set { _iconFore = Theme.C(value); } }
         public string Kind { get; set; }
+        /// <summary>Another PC maker's name when the installed driver was made for that maker's PCs.</summary>
+        public string Foreign { get; set; }
 
         string _installed; public string Installed { get { return _installed; } set { Set(ref _installed, value, "Installed"); } }
         string _state; public string State { get { return _state; } set { Set(ref _state, value, "State"); } }
@@ -398,6 +437,8 @@ namespace DriverUpdater
         /// <summary>Applies one visual state to the row.</summary>
         public void ApplyState(string state, ScanResult r, bool busy)
         {
+            // a driver made for another PC maker is flagged instead of being shown as fine
+            if (!string.IsNullOrEmpty(Foreign) && Array.IndexOf(new[] { "NotScanned", "Ok", "Vendor", "Unknown", "Kept", "NotFor" }, state) >= 0) state = "Foreign";
             State = state;
             PillVisibility = "Collapsed"; CheckVisibility = "Hidden"; ButtonVisibility = "Collapsed";
             SpinVisibility = "Collapsed"; AccentVisibility = "Collapsed"; CardBorder = "#E5E7EB";
@@ -409,6 +450,12 @@ namespace DriverUpdater
                 && Array.IndexOf(new[] { "NotScanned", "Ok", "Vendor", "Unknown", "NotFor", "Kept", "Reinstalled" }, state) >= 0 ? "Visible" : "Collapsed";
             switch (state)
             {
+                case "Foreign":
+                    SetTag("Made for " + Foreign + " PCs", "#FEF3C7", "#B45309");
+                    Size = "This driver was made for another maker's PCs - Windows' own driver is the safer choice";
+                    ButtonText = "Use Windows driver"; ButtonTag = "Restore"; ButtonVisibility = "Visible";
+                    ReinstallVisibility = "Collapsed";
+                    break;
                 case "Reinstalled":
                     if (r != null && r.Reboot) SetTag("Reinstalled - restart to finish", "#FEF3C7", "#B45309");
                     else SetTag("Reinstalled", "#DCFCE7", "#15803D");
@@ -489,7 +536,9 @@ namespace DriverUpdater
         public DriverItem NewRow(string key, string name, string maker, string cls, string version)
         {
             var look = Util.DeviceLook(cls, name);
-            var it = new DriverItem { Key = key, Name = name, Manufacturer = maker, Installed = version, Glyph = look[0], IconBack = look[1], IconFore = look[2] };
+            var dev = Inventory.FirstOrDefault(d => string.Equals(d.Key, key, StringComparison.OrdinalIgnoreCase));
+            var it = new DriverItem { Key = key, Name = name, Manufacturer = maker, Installed = version, Glyph = look[0], IconBack = look[1], IconFore = look[2],
+                                      Foreign = dev != null ? dev.Foreign : "" };
             ByKey[key] = it;
             return it;
         }

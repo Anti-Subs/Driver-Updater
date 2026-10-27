@@ -224,6 +224,7 @@ namespace DriverUpdater
                     d.BuiltIn = d.Provider.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase)
                              || (inf.Length > 0 && !inf.StartsWith("oem", StringComparison.OrdinalIgnoreCase));
                     d.Hint = Util.VendorHint(d.Manufacturer + " " + d.Provider + " " + d.Name, pcMaker, d.Key, d.Class);
+                    d.Foreign = Util.ForeignOem(d.Name + " " + d.Provider, pcMaker, d.Key);
                     list.Add(d);
                 }
             return list;
@@ -464,6 +465,8 @@ namespace DriverUpdater
         }
 
         /// <summary>Best driver for a device. checkedOk=false means Microsoft refused the search.</summary>
+        public string PcMaker;     // builds published for other PC makers are skipped
+
         public CatalogEntry Find(DeviceInfo d, bool isArm, string osName, out bool checkedOk)
         {
             checkedOk = false;
@@ -472,7 +475,7 @@ namespace DriverUpdater
                 var found = Search(q);
                 if (found == null) continue;
                 checkedOk = true;
-                var best = Catalog.Best(found, isArm, osName);
+                var best = Catalog.Best(found, isArm, osName, PcMaker);
                 if (best != null) return best;
             }
             return null;
@@ -685,6 +688,30 @@ namespace DriverUpdater
                 return cr == CR_SUCCESS;
             }
             catch (Exception ex) { Log.Write("Couldn't remove " + id + ": " + ex.Message); return false; }
+        }
+    }
+
+    /// <summary>Removes a driver package that doesn't belong on this PC so Windows goes back to its own driver.</summary>
+    public static class InboxRestore
+    {
+        public class Result { public bool Ok, Reboot; public string Message = "", NowProvider = ""; }
+
+        public static Result Run(string deviceId)
+        {
+            var res = new Result();
+            string q = deviceId.Replace("\\", "\\\\").Replace("'", "\\'");
+            string inf = Sys.Wmi1("SELECT InfName FROM Win32_PnPSignedDriver WHERE DeviceID = '" + q + "'", "InfName");
+            if (!inf.StartsWith("oem", StringComparison.OrdinalIgnoreCase)) { res.Message = "This device already uses a driver that came with Windows."; return res; }
+            string pnputil = Sys.SystemTool("pnputil.exe");
+            Log.Write("Removing " + inf + " (made for another PC maker) from " + deviceId);
+            int rc = Sys.Run(pnputil, "/delete-driver " + inf + " /uninstall /force", 180000);
+            if (rc != 0 && rc != 3010) { res.Message = "Windows couldn't remove the driver (pnputil " + rc + "). Details are in the log."; return res; }
+            Sys.Run(pnputil, "/scan-devices", 180000);
+            Thread.Sleep(3000);
+            res.NowProvider = Sys.Wmi1("SELECT DriverProviderName FROM Win32_PnPSignedDriver WHERE DeviceID = '" + q + "'", "DriverProviderName");
+            res.Ok = true; res.Reboot = rc == 3010 || res.NowProvider.Length == 0;
+            Log.Write("Driver removed; device now uses: " + (res.NowProvider.Length > 0 ? res.NowProvider : "(after a restart)"));
+            return res;
         }
     }
 
