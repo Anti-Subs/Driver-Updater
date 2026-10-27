@@ -42,6 +42,7 @@ Check 'plug-in devices from other makers not flagged' ([DriverUpdater.Util]::For
 Check 'generic IDs never searched' ([DriverUpdater.Catalog]::QueriesFor(@('ACPI\VEN_MSFT&DEV_0001','ACPI\MSFT0001','*MSFT0001')).Count -eq 0 -and [DriverUpdater.Catalog]::QueriesFor(@('ACPI\VEN_CSC&DEV_3556','ACPI\CSC3556')).Count -gt 0)
 $fr = [DriverUpdater.DriverItem]::new(); $fr.Name='Lenovo Keyboard Device'; $fr.Installed='1.0.0.2'; $fr.Foreign='Lenovo'
 $fr.ApplyState('Vendor', $null, $false); Check 'foreign row offers Windows driver' ($fr.State -eq 'Foreign' -and $fr.ButtonTag -eq 'Restore' -and $fr.TagText -eq 'Made for Lenovo PCs')
+Check 'Bluetooth HID IDs not searched' ([DriverUpdater.Catalog]::QueriesFor(@('HID\{00001812-0000-1000-8000-00805f9b34fb}_Dev_VID&02046d_PID&b378_REV&0013&Col03','HID\VID_046D&UP:FF43_U:0202','HID_DEVICE')).Count -eq 0)
 Check 'usb ids' ([DriverUpdater.Util]::IsUsbDeviceId('USB\VID_05AC&PID_12A8\abc') -and [DriverUpdater.Util]::IsUsbDeviceId('USBSTOR\Disk&Ven_SanDisk\1') -and [DriverUpdater.Util]::IsUsbDeviceId('HID\VID_046D&PID_C52B&MI_00\7') -and [DriverUpdater.Util]::IsUsbDeviceId('SWD\WPDBUSENUM\_??_USBSTOR#DISK') -and [DriverUpdater.Util]::IsUsbDeviceId('STORAGE\VOLUME\_??_USBSTOR#DISK&VEN_X'))
 Check 'non-usb ids' (-not [DriverUpdater.Util]::IsUsbDeviceId('PCI\VEN_8086&DEV_7D55\3') -and -not [DriverUpdater.Util]::IsUsbDeviceId('HID\{00001124-0000-1000-8000-00805F9B34FB}_VID&0002046D') -and -not [DriverUpdater.Util]::IsUsbDeviceId('DISPLAY\DELA1B2\5') -and -not [DriverUpdater.Util]::IsUsbDeviceId(''))
 Check 'hint intel' ([DriverUpdater.Util]::VendorHint('Intel Corporation Intel(R) Arc', 'ASUSTeK COMPUTER INC.') -eq 'Intel Driver & Support Assistant')
@@ -54,7 +55,7 @@ $ru=[DriverUpdater.ScanResult]::new(); $ru.Source='Windows Update'; $ru.Latest='
 $it.ApplyState('Update', $ru, $false); Check 'reinstall hidden when update offered' ($it.ReinstallVisibility -eq 'Collapsed')
 $it.ApplyState('Checking', $null, $false); Check 'reinstall hidden while checking' ($it.ReinstallVisibility -eq 'Collapsed')
 $rr=[DriverUpdater.ScanResult]::new(); $rr.Reboot=$true
-$it.ApplyState('Reinstalled', $rr, $false); Check 'reinstalled tag' ($it.TagText -eq 'Reinstalled - restart to finish' -and $it.ReinstallVisibility -eq 'Visible')
+$it.ApplyState('Reinstalled', $rr, $false); Check 'reinstalled tag' ($it.TagText -eq 'Reinstalled – restart to finish' -and $it.ReinstallVisibility -eq 'Visible')
 $it.Installed=''; $it.ApplyState('Ok', $null, $false); Check 'no reinstall without a driver' ($it.ReinstallVisibility -eq 'Collapsed')
 
 "Firmware"
@@ -88,7 +89,7 @@ Check 'dict roundtrip' ($saved.Count -eq 3 -and ($saved | ? Key -eq 'K:Wifi').La
 $L.Inventory[3].Version = '24.7'   # wifi now new
 $L.Reset('NotScanned'); $n = $L.ImportSaved([DriverUpdater.ScanResult[]]$saved)
 Check 'shown 3' ($n -eq 3)
-Check 'camera pending restart at top' ($L.Rows[0].Name -eq 'Camera' -and $L.Rows[0].TagText -eq 'Installed - restart to finish')
+Check 'camera pending restart at top' ($L.Rows[0].Name -eq 'Camera' -and $L.Rows[0].TagText -eq 'Installed – restart to finish')
 Check 'wifi up to date' ($L.ByKey['K:Wifi'].State -eq 'Ok')
 Check 'audio never scanned' ($L.ByKey['K:Audio'].State -eq 'NotScanned')
 "Reopen after restart"

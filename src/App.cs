@@ -24,7 +24,7 @@ namespace DriverUpdater
     /// <summary>Small helpers for working with WPF objects loaded at run time.</summary>
     public static class Wpf
     {
-        const string PF = ", PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
+        public const string PF = ", PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
         const string PC = ", PresentationCore, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
         static readonly Type VisibilityType = Type.GetType("System.Windows.Visibility" + PC, true);
         static readonly object BrushConv = Activator.CreateInstance(Type.GetType("System.Windows.Media.BrushConverter" + PC, true));
@@ -188,10 +188,10 @@ namespace DriverUpdater
             E("TxtDir").Text = existingDir ?? Installer.DefaultDir;
             if (existingDir != null)
             {
-                E("HeaderSub").Text = "Version " + App.Version + "  -  update the installed copy" + (existingVer != null ? " (" + existingVer + ")" : "");
+                E("HeaderSub").Text = "Version " + App.Version + " – update the installed copy" + (existingVer != null ? " (" + existingVer + ")" : "");
                 E("BtnInstall").Content = "Update";
             }
-            else E("HeaderSub").Text = "Version " + App.Version + "  -  Setup";
+            else E("HeaderSub").Text = "Version " + App.Version + " – Setup";
 
             Wpf.On(O("BtnBrowse"), "Click", (s, e) =>
             {
@@ -352,6 +352,11 @@ namespace DriverUpdater
             Wpf.On(O("BtnUpdLater"), "Click", (s, e) => { if (appRelease != null) SelfUpdate.Dismiss(appRelease.Version); E("UpdateBanner").Visibility = Wpf.Vis(false); });
             Wpf.On(O("BtnUpdNotes"), "Click", (s, e) => ShowAppNotes());
             Wpf.On(O("BtnCheckApp"), "Click", (s, e) => CheckAppUpdate(true));
+            foreach (var chip in new[] { "Upd", "Ok", "Mk", "Unk", "Total" })
+            {
+                string c = chip;
+                Wpf.On(O("Chip" + c), "MouseLeftButtonUp", (s, e) => SetFilter(c == "Total" || filter == c ? null : c));
+            }
             Wpf.On(O("BtnThemeAuto"), "Click", (s, e) => SetAppearance("auto"));
             Wpf.On(O("BtnThemeLight"), "Click", (s, e) => SetAppearance("light"));
             Wpf.On(O("BtnThemeDark"), "Click", (s, e) => SetAppearance("dark"));
@@ -487,16 +492,17 @@ namespace DriverUpdater
             E("ChipOkText").Text = nOk + " up to date";
             E("ChipMkText").Text = nMk + " check with maker";
             E("ChipUnkText").Text = nUnk + " not checked";
-            if (mode != "loading") E("ChipTotalText").Text = scanned ? total + " drivers in total" : total + " drivers  -  not scanned yet";
+            if (mode != "loading") E("ChipTotalText").Text = scanned ? total + " drivers in total" : total + " drivers – not scanned yet";
 
             E("LastScanText").Text = mode == "scanning" ? "Scanning now..."
                 : lastScan.HasValue ? "Last scan: " + Util.FormatWhen(lastScan.Value, DateTime.Now) + "  (" + Util.Age(lastScan.Value, DateTime.Now) + ")"
                 : "Never scanned";
+            RefreshFilter();
             E("UpdateBadgeText").Text = nUpd.ToString(CultureInfo.InvariantCulture);
             E("UpdateBadge").Visibility = Wpf.Vis(nUpd > 0);
             int nUpdRows = list.Count("Update");
             int nSel = list.Rows.OfType<DriverItem>().Count(i => i.State == "Update" && i.IsChecked);
-            E("BtnUpdateAll").Content = nSel == nUpdRows ? "Update All (" + nUpd + ")" : "Update selected (" + nSel + ")";
+            E("BtnUpdateAll").Content = nSel == nUpdRows ? "Update all (" + nUpd + ")" : "Update selected (" + nSel + ")";
             E("BtnUpdateAll").Visibility = Wpf.Vis(nUpd > 0 && mode != "scanning");
         }
 
@@ -561,7 +567,7 @@ namespace DriverUpdater
                     {
                         int pending = list.Count("Installed");
                         Footer(pending > 0
-                            ? "Showing your last scan from " + Util.FormatWhen(saveTime, DateTime.Now) + ". " + pending + " driver(s) will finish installing when you restart your PC."
+                            ? "Showing your last scan from " + Util.FormatWhen(saveTime, DateTime.Now) + ". " + Util.Plural(pending, "driver") + " will finish installing when you restart your PC."
                             : "Showing your last scan from " + Util.FormatWhen(saveTime, DateTime.Now) + ". Click 'Scan again' to check for anything new.");
                     }
                     else Footer("Found " + third.Count + " drivers from hardware makers. Click 'Scan now' to check them for updates.");
@@ -574,6 +580,7 @@ namespace DriverUpdater
         {
             if (list.Inventory.Count == 0) return;
             recheckRound++; recheckAttempts = 0;
+            if (filter != null) SetFilter(null);
             list.Reset("Waiting");
             cancel = false;
             mode = "scanning";
@@ -717,7 +724,7 @@ namespace DriverUpdater
             // 4) Wait for Windows Update if it is still going
             if (!wuTask.IsCompleted && !cancel)
             {
-                Post(() => { ScanBar(true, "Finishing the Windows Update check", "Windows is still answering - almost done...", ""); Progress(E("ScanProgress"), 0, 1, true); });
+                Post(() => { ScanBar(true, "Finishing the Windows Update check", "Windows is still answering – almost done...", ""); Progress(E("ScanProgress"), 0, 1, true); });
                 while (!wuTask.Wait(500) && !cancel) { }
             }
             bool wasCancelled = cancel;
@@ -765,7 +772,7 @@ namespace DriverUpdater
             if (wasCancelled) Footer("Scan stopped at " + when + ". Drivers that weren't checked show 'Not scanned yet'.");
             else if (nUnk > 0) ScheduleRecheck();
             else if (nUpd > 0) Footer("Scanned at " + when + ". Updates are at the top. Every install creates a System Restore point first.");
-            else Footer("Scanned at " + when + ". No updates from Microsoft - see Tools for drivers your hardware makers publish first.");
+            else Footer("Scanned at " + when + ". No updates from Microsoft – see Tools for drivers your hardware makers publish first.");
             Log.Write("Scan finished: " + nUpd + " updates, " + nUnk + " not checked, cancelled=" + wasCancelled + ".");
             ScanStore.Save(lastScan.Value, list.Data.Values);
         }
@@ -789,7 +796,7 @@ namespace DriverUpdater
             if (due < soonest) due = soonest;
             int round = ++recheckRound;
             Footer("Microsoft's catalog is limiting searches. " + Util.Plural(nUnk, "driver") + " will be checked again automatically at " +
-                   due.ToString("HH:mm", CultureInfo.InvariantCulture) + " - you can keep using the app or close it.");
+                   due.ToString("HH:mm", CultureInfo.InvariantCulture) + " – you can keep using the app or close it.");
             Log.Write("Re-check of " + nUnk + " unchecked driver(s) scheduled for " + due.ToString("HH:mm", CultureInfo.InvariantCulture));
             new Thread(() =>
             {
@@ -839,7 +846,7 @@ namespace DriverUpdater
                     else
                     {
                         recheckAttempts = 0;
-                        Footer("All drivers checked." + (found > 0 ? " " + Util.Plural(found, "more update") + " found - they're at the top." : " Nothing more to update."));
+                        Footer("All drivers checked." + (found > 0 ? " " + Util.Plural(found, "more update") + " found – they're at the top." : " Nothing more to update."));
                     }
                 });
             }) { IsBackground = true }.Start();
@@ -866,11 +873,11 @@ namespace DriverUpdater
             }
             if (!skipRestore)
             {
-                string names = string.Join("\n", targets.Take(8).Select(t => "  - " + t.Name));
+                string names = string.Join("\n", targets.Take(8).Select(t => "  • " + t.Name));
                 if (firmware.Count > 0) names += "\n\nIncludes a BIOS / firmware update: Windows prepares it now and the PC finishes it during the next restart " +
-                                                 "(the screen may stay dark for a few minutes - don't turn it off). If BitLocker is on, keep your recovery key handy.";
-                if (targets.Count > 8) names += "\n  - and " + (targets.Count - 8) + " more";
-                if (Native.Ask("Install " + targets.Count + " driver update(s)?\n\n" + names + "\n\nA System Restore point will be created first.", "Driver Updater", Native.YESNO, Native.QUESTION) != Native.IDYES) return;
+                                                 "(the screen may stay dark for a few minutes – don't turn it off). If BitLocker is on, keep your recovery key handy.";
+                if (targets.Count > 8) names += "\n  • and " + (targets.Count - 8) + " more";
+                if (Native.Ask("Install " + Util.Plural(targets.Count, "driver update") + "?\n\n" + names + "\n\nA System Restore point will be created first.", "Driver Updater", Native.YESNO, Native.QUESTION) != Native.IDYES) return;
             }
             mode = "installing";
             foreach (var t in targets) t.ApplyState("Queued", list.Data[t.Key], true);
@@ -1021,18 +1028,18 @@ namespace DriverUpdater
             }
             UpdateHeader();
             if (lastScan.HasValue) ScanStore.Save(lastScan.Value, list.Data.Values);
-            string msg = ok + " installed, " + fail + " not installed" + (opened > 0 ? ", " + opened + " manufacturer installer(s) opened" : "") + ". Details are in the log (Tools > Open log folder).";
-            if (needRestart.Count > 0) msg += " " + needRestart.Count + " need a restart to finish.";
+            string msg = ok + " installed, " + fail + " not installed" + (opened > 0 ? ", " + Util.Plural(opened, "manufacturer installer") + " opened" : "") + ". Details are in the log (Tools > Open log folder).";
+            if (needRestart.Count > 0) msg += " " + needRestart.Count + (needRestart.Count == 1 ? " needs" : " need") + " a restart to finish.";
             Footer(msg);
             if (needRestart.Count > 0)
             {
-                string names = string.Join("\n", needRestart.Take(6).Select(t => "  - " + t.Name));
-                if (Native.Ask(ok + " driver(s) installed.\n\nWindows needs a restart to finish installing:\n" + names +
+                string names = string.Join("\n", needRestart.Take(6).Select(t => "  • " + t.Name));
+                if (Native.Ask(Util.Plural(ok, "driver") + " installed.\n\nWindows needs a restart to finish installing:\n" + names +
                     "\n\nThe old driver keeps working until then. Restart now?\n(Choose No to restart later yourself.)", "Driver Updater", Native.YESNO, Native.QUESTION) == Native.IDYES)
                     Sys.Restart();
             }
-            else Native.Ask(ok + " driver(s) installed, " + fail + " not installed." +
-                (opened > 0 ? "\n\n" + opened + " manufacturer installer(s) opened in their own window. Follow the steps there to finish, then click 'Scan again'." : ""),
+            else Native.Ask(Util.Plural(ok, "driver") + " installed, " + fail + " not installed." +
+                (opened > 0 ? "\n\n" + Util.Plural(opened, "manufacturer installer") + " opened in their own window. Follow the steps there to finish, then click 'Scan again'." : ""),
                 "Driver Updater", Native.OK, Native.INFO);
         }
 
@@ -1104,6 +1111,56 @@ namespace DriverUpdater
                 }
             }
             Sys.OpenUrl(d.Url);
+        }
+
+        // ---------------------------------------------------------------- list filter (the chips above the list)
+        string filter;                 // null = all drivers
+        System.ComponentModel.ICollectionView rowsView;
+
+        static readonly Dictionary<string, string[]> FilterStates = new Dictionary<string, string[]>
+        {
+            { "Upd", new[] { "Update", "Queued", "Installing", "Opened" } },
+            { "Ok", new[] { "Ok", "Installed", "Kept", "NotFor", "Reinstalled" } },
+            { "Mk", new[] { "Vendor", "Foreign" } },
+            { "Unk", new[] { "Unknown" } },
+        };
+
+        void SetFilter(string f)
+        {
+            if (rowsView == null)
+            {
+                var cvs = Type.GetType("System.Windows.Data.CollectionViewSource" + Wpf.PF, true);
+                rowsView = (System.ComponentModel.ICollectionView)cvs.GetMethod("GetDefaultView").Invoke(null, new object[] { list.Rows });
+            }
+            filter = f;
+            if (f == null) rowsView.Filter = null;
+            else
+            {
+                var states = FilterStates[f];
+                rowsView.Filter = o => { var it = o as DriverItem; return it != null && Array.IndexOf(states, it.State) >= 0; };
+            }
+            foreach (var c in new[] { "Upd", "Ok", "Mk", "Unk", "Total" })
+            {
+                bool on = c == f;
+                dynamic chip = E("Chip" + c);
+                if (on) { chip.Background = Wpf.Brush("#EFF6FF"); chip.BorderBrush = Wpf.Brush("#2563EB"); }
+                else
+                {
+                    // back to the style's own colours (keeps the hover effect)
+                    var border = Type.GetType("System.Windows.Controls.Border" + Wpf.PF, true);
+                    chip.ClearValue((dynamic)border.GetField("BackgroundProperty").GetValue(null));
+                    chip.ClearValue((dynamic)border.GetField("BorderBrushProperty").GetValue(null));
+                }
+            }
+            E("ListScroll").ScrollToTop();
+        }
+
+        /// <summary>Rows change state during scans and installs; keep the filtered list current.</summary>
+        void RefreshFilter()
+        {
+            if (filter == null || rowsView == null) return;
+            rowsView.Refresh();
+            if (FilterStates[filter].Sum(st => list.Count(st)) == 0) SetFilter(null);   // nothing left to show: back to all
         }
 
         // ---------------------------------------------------------------- appearance
@@ -1253,7 +1310,7 @@ namespace DriverUpdater
                         if (dev != null) dev.Foreign = "";
                         if (ver.Length > 0) item.Installed = ver;
                         item.ApplyState("Reinstalled", new ScanResult { Key = item.Key, Name = item.Name, Reboot = res.Reboot }, false);
-                        item.SetTag(res.Reboot ? "Windows driver - restart to finish" : "Windows driver restored", res.Reboot ? "#FEF3C7" : "#DCFCE7", res.Reboot ? "#B45309" : "#15803D");
+                        item.SetTag(res.Reboot ? "Windows driver – restart to finish" : "Windows driver restored", res.Reboot ? "#FEF3C7" : "#DCFCE7", res.Reboot ? "#B45309" : "#15803D");
                         UpdateHeader();
                         Footer(item.Name + " now uses " + (res.NowProvider.Length > 0 ? res.NowProvider + "'s driver" : "Windows' own driver after a restart") + ".");
                         if (res.Reboot && Native.Ask("Windows needs a restart to finish switching " + item.Name + " to its own driver.\n\nRestart now?", "Use Windows driver", Native.YESNO, Native.QUESTION) == Native.IDYES)
@@ -1278,7 +1335,7 @@ namespace DriverUpdater
                         : string.Equals(cls, "NET", StringComparison.OrdinalIgnoreCase) ? "\n\nThe connection on this adapter will drop for a few seconds."
                         : string.Equals(cls, "MEDIA", StringComparison.OrdinalIgnoreCase) || string.Equals(cls, "AUDIOENDPOINT", StringComparison.OrdinalIgnoreCase) ? "\n\nSound from this device will stop for a moment."
                         : "";
-            if (Native.Ask("Reinstall the driver for " + item.Name + "?\n\nThe same version (" + item.Installed + ") is installed again from the copy Windows already keeps - nothing is downloaded. " +
+            if (Native.Ask("Reinstall the driver for " + item.Name + "?\n\nThe same version (" + item.Installed + ") is installed again from the copy Windows already keeps – nothing is downloaded. " +
                            "This often fixes a device that stopped working properly." + note, "Reinstall driver", Native.YESNO, Native.QUESTION) != Native.IDYES) return;
 
             ScanResult saved; list.Data.TryGetValue(item.Key, out saved);
@@ -1364,7 +1421,7 @@ namespace DriverUpdater
                         {
                             done();
                             Footer("Removed " + Util.Plural(ok, "old USB device") + ".");
-                            string msg = ok == found.Count ? "Done - removed " + Util.Plural(ok, "old USB device") + "."
+                            string msg = ok == found.Count ? "Done – removed " + Util.Plural(ok, "old USB device") + "."
                                        : "Removed " + ok + " of " + found.Count + ". Windows kept the rest (details are in the log).";
                             if (Native.Ask(msg + "\n\nScan again now? Updates offered only for those old devices should disappear.", "Remove old USB devices", Native.YESNO, Native.INFO) == Native.IDYES)
                             { ShowPage("Drivers"); StartScan(); }
@@ -1410,7 +1467,7 @@ namespace DriverUpdater
                 };
                 File.WriteAllText(dlg.FileName, Json.Write(report), new System.Text.UTF8Encoding(false));
                 Footer("Saved hardware report to " + dlg.FileName);
-                Native.Ask("Hardware report saved.\n\nIt lists this PC's maker, model and devices with their driver versions and hardware IDs - no PC name, user name or serial numbers.",
+                Native.Ask("Hardware report saved.\n\nIt lists this PC's maker, model and devices with their driver versions and hardware IDs – no PC name, user name or serial numbers.",
                            "Driver Updater", Native.OK, Native.INFO);
             }
         }

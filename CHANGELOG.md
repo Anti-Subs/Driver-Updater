@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.7.4 - 30 Oct 2026
+- New: Click the counters above the list (updates, up to date, check with maker, not checked) to show only those drivers; click again or on the total to show all
+- Fixed: Bluetooth mice and keyboards made Microsoft's catalog stop answering, leaving the drivers after them unchecked
+- Fixed: Dell's catalog couldn't be downloaded or unpacked on some PCs
+- Fixed: Devices with nothing to search for (like Logitech Bluetooth helpers) showed 'Not checked – Microsoft busy' and were retried over and over
+- Improved: Consistent wording, capitalisation and punctuation throughout the app
+
 ## 3.7.3 - 27 Oct 2026
 - Dell: built-in audio (Realtek and other sound chips) is now matched to Dell's drivers too
 - Dell: more time for the first catalog download, and clearer notes in the log

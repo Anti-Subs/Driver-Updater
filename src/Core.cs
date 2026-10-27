@@ -82,7 +82,7 @@ namespace DriverUpdater
                 S("NVIDIA", "GeForce and RTX graphics drivers from NVIDIA's official driver service (installed driver-only).", m(gpus, "NVIDIA")),
                 S("Intel", "Graphics, Wi-Fi, Bluetooth and NPU drivers from Intel's Driver & Support Assistant feed.", m(gpus + " " + cpu, "Intel")),
                 S("ASUS", "Drivers made for your exact ASUS laptop model, from ASUS's support site.", m(pcMaker, "ASUS")),
-                S("Dell and Alienware", "Dell Update Packages for your exact Dell or Alienware model - the catalog Dell Command | Update uses.", m(pcMaker, "Dell|Alienware")),
+                S("Dell and Alienware", "Dell Update Packages for your exact Dell or Alienware model – the catalog Dell Command | Update uses.", m(pcMaker, "Dell|Alienware")),
             };
         }
     }
@@ -364,7 +364,8 @@ namespace DriverUpdater
 
         public static List<string> QueriesFor(string[] hardwareIds)
         {
-            hardwareIds = (hardwareIds ?? new string[0]).Where(h => !IsGenericId(h)).ToArray();
+            // Bluetooth-style IDs ("HID\{00001812-...}_Dev_VID&02046d...") make Microsoft's search page fail, so they're skipped
+            hardwareIds = (hardwareIds ?? new string[0]).Where(h => !IsGenericId(h) && h.IndexOf('{') < 0).ToArray();
             var q = new List<string>();
             var m = Regex.Match(string.Join(" ", hardwareIds ?? new string[0]), "(VEN|VID)_[0-9A-Fa-f]{4}&(DEV|PID)_[0-9A-Fa-f]{4}");
             if (m.Success) q.Add(m.Value);
@@ -452,12 +453,12 @@ namespace DriverUpdater
             {
                 case "Foreign":
                     SetTag("Made for " + Foreign + " PCs", "#FEF3C7", "#B45309");
-                    Size = "This driver was made for another maker's PCs - Windows' own driver is the safer choice";
+                    Size = "This driver was made for another maker's PCs – Windows' own driver is the safer choice";
                     ButtonText = "Use Windows driver"; ButtonTag = "Restore"; ButtonVisibility = "Visible";
                     ReinstallVisibility = "Collapsed";
                     break;
                 case "Reinstalled":
-                    if (r != null && r.Reboot) SetTag("Reinstalled - restart to finish", "#FEF3C7", "#B45309");
+                    if (r != null && r.Reboot) SetTag("Reinstalled – restart to finish", "#FEF3C7", "#B45309");
                     else SetTag("Reinstalled", "#DCFCE7", "#15803D");
                     break;
                 case "NotScanned": SetTag("Not scanned yet", "#F3F4F6", "#6B7280"); break;
@@ -472,7 +473,7 @@ namespace DriverUpdater
                     VersionLine = "Version: " + (string.IsNullOrEmpty(Installed) ? "not installed" : Installed) + "  >  " + r.Latest;
                     Size = r.Size ?? "";
                     CheckVisibility = "Visible"; IsChecked = !r.IsFirmware;
-                    if (r.IsFirmware) Size = (Size.Length > 0 ? Size + "  |  " : "") + "BIOS update - not ticked by default. Keep the charger plugged in; it finishes during a restart";
+                    if (r.IsFirmware) Size = (Size.Length > 0 ? Size + "  |  " : "") + "BIOS update – not ticked by default. Keep the charger plugged in; it finishes during a restart";
                     ButtonText = "Update"; ButtonTag = "Update"; ButtonVisibility = "Visible";
                     AccentVisibility = "Visible"; CardBorder = "#FCA5A5";
                     break;
@@ -492,13 +493,13 @@ namespace DriverUpdater
                     SetTag("Check with maker", "#EFF6FF", "#1D4ED8");
                     if (hint.Length > 0) { Size = "Newer builds: " + hint; ButtonText = "Maker's tool"; ButtonTag = "Maker"; ButtonVisibility = "Visible"; }
                     break;
-                case "Unknown": SetTag("Not checked - Microsoft busy", "#FEF3C7", "#B45309"); break;
+                case "Unknown": SetTag("Not checked – Microsoft busy", "#FEF3C7", "#B45309"); break;
                 case "NotFor":
                     SetTag("Up to date", "#DCFCE7", "#15803D");
                     if (r != null) Size = r.Source + "'s " + r.Latest + " package doesn't support this device";
                     break;
                 case "Kept":
-                    SetTag("Up to date - Windows prefers this version", "#DCFCE7", "#15803D");
+                    SetTag("Up to date – Windows prefers this version", "#DCFCE7", "#15803D");
                     if (r != null && !string.IsNullOrEmpty(r.Latest)) Size = "Version " + r.Latest + " was offered, but Windows keeps the current one as the better match";
                     break;
                 case "Queued":
@@ -511,10 +512,10 @@ namespace DriverUpdater
                     break;
                 case "Opened":
                     ApplyState("Update", r, busy);
-                    State = "Opened"; SetTag(r.Source + " installer opened - finish there", "#FEF3C7", "#B45309");
+                    State = "Opened"; SetTag(r.Source + " installer opened – finish there", "#FEF3C7", "#B45309");
                     break;
                 case "Installed":
-                    if (r != null && r.Reboot) SetTag("Installed - restart to finish", "#FEF3C7", "#B45309");
+                    if (r != null && r.Reboot) SetTag("Installed – restart to finish", "#FEF3C7", "#B45309");
                     else SetTag("Installed", "#DCFCE7", "#15803D");
                     VersionLine = Manufacturer + "  |  Version: " + (r != null ? r.Latest : Installed);
                     IsChecked = false;

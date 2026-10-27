@@ -40,6 +40,12 @@ namespace DriverUpdater
             if (!Allowed(url)) throw new InvalidOperationException("Not an allowed download site: " + url);
             var r = (HttpWebRequest)WebRequest.Create(url);
             r.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) DriverUpdater/" + App.Version;
+            if (new Uri(url).Host.EndsWith("dell.com", StringComparison.OrdinalIgnoreCase))
+            {
+                // Dell's download servers turn away requests that don't look like a normal browser
+                r.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+                r.Accept = "*/*";
+            }
             r.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             r.Timeout = 30000; r.ReadWriteTimeout = 60000;
             return r;
@@ -121,15 +127,46 @@ namespace DriverUpdater
             try
             {
                 string cab = Path.Combine(work, "catalog.cab");
-                using (var resp = Request(url).GetResponse())
-                using (var src = resp.GetResponseStream())
-                using (var dst = File.Create(cab)) src.CopyTo(dst);
+                byte[] data = null;
+                foreach (var u in new[] { url, url.Replace("://downloads.dell.com/", "://dl.dell.com/") }.Distinct())
+                {
+                    try
+                    {
+                        using (var resp = (HttpWebResponse)Request(u).GetResponse())
+                        using (var src = resp.GetResponseStream())
+                        using (var ms = new MemoryStream()) { src.CopyTo(ms); data = ms.ToArray(); }
+                    }
+                    catch (WebException ex) { Log.Write("Catalog download from " + u + " failed: " + ex.Message); data = null; continue; }
+                    if (data.Length > 4 && data[0] == 'M' && data[1] == 'S' && data[2] == 'C' && data[3] == 'F') break;     // a real .cab
+                    string head = Encoding.UTF8.GetString(data, 0, Math.Min(data.Length, 300)).TrimStart('\uFEFF', ' ', '\r', '\n');
+                    if (head.StartsWith("<?xml") || head.StartsWith("<Manifest")) break;                                      // plain XML is fine too
+                    Log.Write("Catalog download from " + u + " wasn't a catalog (" + data.Length + " bytes): " + System.Text.RegularExpressions.Regex.Replace(head, @"\s+", " "));
+                    data = null;
+                }
+                if (data == null) throw new InvalidOperationException("the maker's server didn't send its catalog");
+                if (!(data[0] == 'M' && data[1] == 'S' && data[2] == 'C' && data[3] == 'F'))
+                {
+                    string plain = new StreamReader(new MemoryStream(data), true).ReadToEnd();
+                    Directory.CreateDirectory(dir);
+                    File.WriteAllText(cache, plain, Encoding.UTF8);
+                    return plain;
+                }
+                File.WriteAllBytes(cab, data);
                 string outDir = Path.Combine(work, "x");
                 Directory.CreateDirectory(outDir);
-                Sys.Run(Sys.SystemTool("expand.exe"), "-F:* \"" + cab + "\" \"" + outDir + "\"", 120000);
-                string xml = Directory.GetFiles(outDir, "*.xml", SearchOption.AllDirectories).OrderByDescending(f => new FileInfo(f).Length).FirstOrDefault();
-                if (xml == null) throw new InvalidOperationException("catalog file was empty");
-                string text = File.ReadAllText(xml);
+                string text = ExtractCatalogXml(cab, outDir, 0);
+                if (text == null)
+                {
+                    // single-file mode, naming the output ourselves (what Dell's own tools do)
+                    string one = Path.Combine(outDir, "single.xml");
+                    Sys.Run(Sys.SystemTool("expand.exe"), "\"" + cab + "\" \"" + one + "\"", 120000);
+                    if (File.Exists(one) && LooksLikeXml(one)) text = File.ReadAllText(one);
+                }
+                if (text == null)
+                {
+                    Log.Write("Catalog .cab (" + data.Length + " bytes) held: " + string.Join(", ", Directory.GetFiles(outDir, "*", SearchOption.AllDirectories).Select(f => Path.GetFileName(f) + " " + new FileInfo(f).Length)));
+                    throw new InvalidOperationException("no catalog inside the downloaded file");
+                }
                 Directory.CreateDirectory(dir);
                 File.WriteAllText(cache, text, Encoding.UTF8);
                 return text;
@@ -140,6 +177,43 @@ namespace DriverUpdater
                 throw;
             }
             finally { try { Directory.Delete(work, true); } catch { } }
+        }
+
+        static bool LooksLikeXml(string file)
+        {
+            try
+            {
+                using (var r = new StreamReader(file, true))
+                {
+                    var buf = new char[200]; int n = r.Read(buf, 0, buf.Length);
+                    return new string(buf, 0, n).TrimStart('\uFEFF', ' ', '\r', '\n', '\t').StartsWith("<");
+                }
+            }
+            catch { return false; }
+        }
+
+        static bool IsCab(string file)
+        {
+            try { using (var f = File.OpenRead(file)) { var b = new byte[4]; return f.Read(b, 0, 4) == 4 && b[0] == 'M' && b[1] == 'S' && b[2] == 'C' && b[3] == 'F'; } }
+            catch { return false; }
+        }
+
+        /// <summary>Unpacks a .cab and returns the largest XML inside (looking one level into a .cab inside the .cab).</summary>
+        static string ExtractCatalogXml(string cab, string outDir, int depth)
+        {
+            Directory.CreateDirectory(outDir);
+            Sys.Run(Sys.SystemTool("expand.exe"), "-F:* \"" + cab + "\" \"" + outDir + "\"", 120000);
+            var files = Directory.GetFiles(outDir, "*", SearchOption.AllDirectories).OrderByDescending(f => new FileInfo(f).Length).ToList();
+            var xml = files.FirstOrDefault(LooksLikeXml);
+            if (xml != null) return File.ReadAllText(xml);
+            if (depth == 0)
+                foreach (var inner in files.Where(IsCab))
+                {
+                    if (string.Equals(Path.GetFullPath(inner), Path.GetFullPath(cab), StringComparison.OrdinalIgnoreCase)) continue;
+                    var t = ExtractCatalogXml(inner, Path.Combine(outDir, "inner"), 1);
+                    if (t != null) return t;
+                }
+            return null;
         }
 
         public static Dictionary<string, ScanResult> CheckNvidia(List<DeviceInfo> devices, bool win11)
@@ -437,7 +511,7 @@ namespace DriverUpdater
                     if (sec % 3 == 0)
                         status(silent
                             ? "Installing " + job.Name + " (" + job.Source + ", in the background)... " + sec / 60 + ":" + (sec % 60).ToString("00")
-                            : job.Source + "'s installer is open for " + job.Name + " - finish it there, then Driver Updater continues.");
+                            : job.Source + "'s installer is open for " + job.Name + " – finish it there, then Driver Updater continues.");
                     if (watch.Elapsed.TotalMinutes > 30) { Log.Write(job.Source + " installer is taking too long; leaving it to finish."); return InstallOutcome.Of(false, "Still installing - scan again later"); }
                 }
                 code = p.ExitCode;
@@ -518,7 +592,7 @@ namespace DriverUpdater
                 while (!p.WaitForExit(1000))
                 {
                     int sec = (int)watch.Elapsed.TotalSeconds;
-                    if (sec % 5 == 0) status("Installing the NVIDIA driver (driver only)... " + sec / 60 + ":" + (sec % 60).ToString("00") + "  - the screen may flicker");
+                    if (sec % 5 == 0) status("Installing the NVIDIA driver (driver only)... " + sec / 60 + ":" + (sec % 60).ToString("00") + " – the screen may flicker");
                     if (watch.Elapsed.TotalMinutes > 25) { Log.Write("NVIDIA installer is taking too long; leaving it to finish on its own."); return InstallOutcome.Of(false, "Still installing - check again later"); }
                 }
                 code = p.ExitCode;
