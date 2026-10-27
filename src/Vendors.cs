@@ -200,6 +200,7 @@ namespace DriverUpdater
     public static class Dell
     {
         public const string IndexUrl = "https://downloads.dell.com/catalog/CatalogIndexPC.cab";
+        static readonly HashSet<string> AudioCodecVendors = new HashSet<string> { "10EC", "1013", "14F1", "111D", "1102", "8384" };   // Realtek, Cirrus, Conexant, IDT, Creative, SigmaTel
 
         static XmlDocument Load(string xml)
         {
@@ -267,6 +268,14 @@ namespace DriverUpdater
                     string sd = pci.GetAttribute("subDeviceID"), sv = pci.GetAttribute("subVendorID");
                     if (sd.Length == 4 && sv.Length == 4) id += "&SUBSYS_" + (sd + sv).ToUpperInvariant();
                     if (!ids.Contains(id)) ids.Add(id);
+                    // Dell lists audio codecs (Realtek, Cirrus, Conexant...) as PCI IDs too; Windows names them
+                    // HDAUDIO\FUNC_01&VEN_xxxx&DEV_yyyy&SUBSYS_{vendor}{device} (or INTELAUDIO\FUNC_01...)
+                    if (AudioCodecVendors.Contains(ven.ToUpperInvariant()))
+                    {
+                        string codec = "FUNC_01&VEN_" + ven.ToUpperInvariant() + "&DEV_" + dev.ToUpperInvariant();
+                        if (sd.Length == 4 && sv.Length == 4) codec += "&SUBSYS_" + (sv + sd).ToUpperInvariant();
+                        if (!ids.Contains(codec)) ids.Add(codec);
+                    }
                 }
                 if (ids.Count == 0) continue;     // only drivers Dell ties to exact hardware IDs
                 string path = c.GetAttribute("path").TrimStart('/');

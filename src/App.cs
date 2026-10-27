@@ -375,6 +375,7 @@ namespace DriverUpdater
                 if (tag == "Update") StartInstall(new List<DriverItem> { item }, false);
                 else if (tag == "Tool") InvokeTool(item.Index);
                 else if (tag == "Reinstall") StartReinstall(item);
+                else if (tag == "Restore") StartRestoreInbox(item);
                 else ShowPage("Tools");
             };
             Wpf.OnButtonClick(O("ListDrivers"), cardClick);
@@ -462,7 +463,7 @@ namespace DriverUpdater
         {
             int nUpd = list.Count("Update", "Queued", "Installing", "Opened");
             int nOk = list.Count("Ok", "Installed", "Kept", "NotFor", "Reinstalled");
-            int nMk = list.Count("Vendor");
+            int nMk = list.Count("Vendor", "Foreign");
             int nUnk = list.Count("Unknown");
             int total = list.Rows.Count;
             string suffix;
@@ -659,14 +660,16 @@ namespace DriverUpdater
                 try { return c.Value(); }
                 catch (Exception ex) { Log.Write(c.Key + " check failed: " + ex.Message); return new Dictionary<string, ScanResult>(); }
             })).ToArray();
-            System.Threading.Tasks.Task.WaitAll(vendorTasks, TimeSpan.FromSeconds(45));
+            System.Threading.Tasks.Task.WaitAll(vendorTasks, TimeSpan.FromSeconds(75));   // Dell's first catalog download can take a while
+            for (int vi = 0; vi < vendorTasks.Length; vi++)
+                if (!vendorTasks[vi].IsCompleted) Log.Write(checks[vi].Key + " check didn't finish in time - skipped this scan.");
             var vendorUpdated = new HashSet<string>(StringComparer.OrdinalIgnoreCase);   // a maker answered for these drivers
             foreach (var t in vendorTasks.Where(t => t.Status == System.Threading.Tasks.TaskStatus.RanToCompletion))
                 foreach (var r in t.Result.Values) { vendorUpdated.Add(r.Key); report(r); }
             Log.Write("Manufacturer checks finished after " + (int)(DateTime.Now - started).TotalSeconds + " s.");
 
             // 3) Microsoft Update Catalog, one driver at a time (paced so Microsoft doesn't refuse)
-            var catalog = new CatalogClient();
+            var catalog = new CatalogClient { PcMaker = pcMaker };
             catalog.Cancelled = () => cancel;
             catalog.Status = msg => Post(() => E("ScanBarSub").Text = msg);
             catalog.LoadCache();
@@ -811,7 +814,7 @@ namespace DriverUpdater
             int round = recheckRound;
             new Thread(() =>
             {
-                var catalog = new CatalogClient();
+                var catalog = new CatalogClient { PcMaker = pcMaker };
                 catalog.LoadCache();
                 var store = DriverStore.Versions();
                 var kept = KeptStore.Load();
@@ -1208,6 +1211,59 @@ namespace DriverUpdater
                         Log.Write("Couldn't start the update: " + ex);
                         Native.Ask("Couldn't start the update:\n" + ex.Message + "\n\nYou can run it yourself:\n" + file, "Driver Updater", Native.OK, Native.WARNING);
                         E("UpdateBannerButtons").Visibility = Wpf.Vis(true);
+                    }
+                });
+            });
+        }
+
+        // ---------------------------------------------------------------- drivers made for another PC maker
+        void StartRestoreInbox(DriverItem item)
+        {
+            if (Native.Ask(item.Name + " uses a driver made for " + item.Foreign + " PCs (version " + item.Installed + "). It was probably installed by another driver tool.\n\n" +
+                           "Remove it so Windows goes back to its own driver for this device?\n\nA System Restore point is created first. The device may stop for a moment, and a restart may be needed.",
+                           "Use Windows driver", Native.YESNO, Native.QUESTION) != Native.IDYES) return;
+            string prev = mode;
+            mode = "installing";
+            item.SetTag("Restoring Windows driver...", "#DBEAFE", "#1D4ED8");
+            dynamic bar = E("InstallProgress");
+            bar.Visibility = Wpf.Vis(true);
+            Progress(bar, 0, 1, true);
+            Run(() =>
+            {
+                Post(() => Footer("Creating a System Restore point..."));
+                string why = RestorePoint.Create(240, sec => Post(() => Footer("Creating a System Restore point... (" + sec + " s)")));
+                InboxRestore.Result res;
+                if (why != null) res = new InboxRestore.Result { Message = "No restore point could be made (" + why + "), so nothing was changed." };
+                else
+                {
+                    Post(() => Footer("Removing the " + item.Foreign + " driver..."));
+                    try { res = InboxRestore.Run(item.Key); }
+                    catch (Exception ex) { Log.Write("Restore Windows driver failed: " + ex); res = new InboxRestore.Result { Message = ex.Message }; }
+                }
+                string ver = Sys.DriverVersionOf(item.Key);
+                Post(() =>
+                {
+                    mode = prev;
+                    E("InstallProgress").Visibility = Wpf.VisName("Hidden");
+                    SetBusy(false);
+                    if (res.Ok)
+                    {
+                        item.Foreign = "";
+                        var dev = list.Inventory.FirstOrDefault(d => string.Equals(d.Key, item.Key, StringComparison.OrdinalIgnoreCase));
+                        if (dev != null) dev.Foreign = "";
+                        if (ver.Length > 0) item.Installed = ver;
+                        item.ApplyState("Reinstalled", new ScanResult { Key = item.Key, Name = item.Name, Reboot = res.Reboot }, false);
+                        item.SetTag(res.Reboot ? "Windows driver - restart to finish" : "Windows driver restored", res.Reboot ? "#FEF3C7" : "#DCFCE7", res.Reboot ? "#B45309" : "#15803D");
+                        UpdateHeader();
+                        Footer(item.Name + " now uses " + (res.NowProvider.Length > 0 ? res.NowProvider + "'s driver" : "Windows' own driver after a restart") + ".");
+                        if (res.Reboot && Native.Ask("Windows needs a restart to finish switching " + item.Name + " to its own driver.\n\nRestart now?", "Use Windows driver", Native.YESNO, Native.QUESTION) == Native.IDYES)
+                            Sys.Restart();
+                    }
+                    else
+                    {
+                        item.ApplyState("Foreign", null, false);
+                        Footer("Couldn't switch " + item.Name + " to the Windows driver.");
+                        Native.Ask("Couldn't switch " + item.Name + " to the Windows driver.\n\n" + res.Message, "Use Windows driver", Native.OK, Native.WARNING);
                     }
                 });
             });

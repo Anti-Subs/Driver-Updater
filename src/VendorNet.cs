@@ -97,11 +97,14 @@ namespace DriverUpdater
             var none = new Dictionary<string, ScanResult>();
             string sku = Sys.Wmi1("SELECT SystemSKUNumber FROM Win32_ComputerSystem", "SystemSKUNumber").Trim();
             if (!System.Text.RegularExpressions.Regex.IsMatch(sku, "^[0-9A-Fa-f]{4}$")) { Log.Write("Dell: no Dell system ID ('" + sku + "') - skipped"); return none; }
+            Log.Write("Dell: system ID " + sku + ", reading Dell's catalog index...");
             string index = CachedCabXml(Dell.IndexUrl, "dell-index.xml");
             string path = Dell.ModelCatalogPath(index, sku);
-            if (path == null) { Log.Write("Dell: no catalog for system ID " + sku); return none; }
+            if (path == null) { Log.Write("Dell: no catalog for system ID " + sku + " in the index (" + index.Length + " characters)"); return none; }
+            Log.Write("Dell: model catalog " + path);
             string xml = CachedCabXml("https://downloads.dell.com/" + path, "dell-" + sku.ToUpperInvariant() + ".xml");
             var pk = Dell.Parse(xml, win11, sku);
+            if (pk.Count == 0) pk = Dell.Parse(xml, win11, null);   // some model catalogs list the model only once, at the top
             var found = VendorMatch.ByHardwareId(pk, devices);
             Log.Write("Dell: " + pk.Count + " driver packages for system " + sku + ", " + found.Values.Count(r => r.Kind == "Update") + " newer than installed, " + found.Values.Count(r => r.Kind == "Ok") + " confirmed current");
             return found;
