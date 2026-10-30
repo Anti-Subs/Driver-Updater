@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.7.6 - 30 Oct 2026
+- Fixed: Some ASUS updates (like ASUS System Control Interface) opened ASUS's installer and asked to install MyASUS – they now install silently
+
 ## 3.7.5 - 30 Oct 2026
 - Fixed: 3.7.4 closed with an error as soon as it opened
 

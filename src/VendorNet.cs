@@ -10,6 +10,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace DriverUpdater
 {
@@ -439,6 +440,11 @@ namespace DriverUpdater
                 status("Unpacking " + job.Source + " package...");
                 string extract = Path.Combine(dir, "extracted");
                 Unzip(file, extract);
+                // some makers put the driver in a second .zip inside the package
+                if (Directory.GetFiles(extract, "*.inf", SearchOption.AllDirectories).Length == 0)
+                    foreach (var inner in Directory.GetFiles(extract, "*.zip", SearchOption.AllDirectories).Take(5))
+                        try { Unzip(inner, Path.Combine(Path.GetDirectoryName(inner), Path.GetFileNameWithoutExtension(inner))); } catch (Exception ex) { Log.Write("Couldn't unpack " + inner + ": " + ex.Message); }
+                if (job.Source == "ASUS") LogPackage(extract);
                 if (Directory.GetFiles(extract, "*.inf", SearchOption.AllDirectories).Length > 0)
                 {
                     status("Installing: " + job.Name);
@@ -477,10 +483,25 @@ namespace DriverUpdater
             return result;
         }
 
+        /// <summary>Notes what's inside a package, to improve silent installs for it later.</summary>
+        static void LogPackage(string extract)
+        {
+            try
+            {
+                var files = Directory.GetFiles(extract, "*", SearchOption.AllDirectories);
+                Log.Write("Package contents (" + files.Length + " files): " + string.Join(", ", files.Where(f => Regex.IsMatch(f, @"\.(exe|inf|ini|msi|bat|cmd|appx|msix|msixbundle)$", RegexOptions.IgnoreCase))
+                    .Take(25).Select(f => f.Substring(extract.Length).TrimStart('\\'))));
+                var ini = files.FirstOrDefault(f => Path.GetFileName(f).Equals("AsusSetup.ini", StringComparison.OrdinalIgnoreCase));
+                if (ini != null && new FileInfo(ini).Length < 8192) Log.Write("AsusSetup.ini:" + Environment.NewLine + File.ReadAllText(ini));
+            }
+            catch { }
+        }
+
         /// <summary>Documented silent switches for known manufacturer installers (null = no silent mode known).</summary>
         public static string SilentSwitches(string source, string fileName)
         {
             string f = (fileName ?? "").ToLowerInvariant();
+            if (source == "ASUS" && f == "asussetup.exe") return "-s";        // ASUS package launcher: silent mode (no MyASUS / store prompts)
             if (source == "Dell") return "/s";                                          // Dell Update Package: silent, no automatic restart
             if (source == "Intel")
             {
