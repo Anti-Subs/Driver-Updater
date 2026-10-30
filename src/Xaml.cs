@@ -92,15 +92,15 @@ namespace DriverUpdater
     <Style x:Key=""Chip"" TargetType=""Border"">
       <Setter Property=""Cursor"" Value=""Hand""/>
       <Setter Property=""ToolTip"" Value=""Show only these drivers (click again to show all)""/>
-      <Style.Triggers>
-        <Trigger Property=""IsMouseOver"" Value=""True""><Setter Property=""BorderBrush"" Value=""#93C5FD""/></Trigger>
-      </Style.Triggers>
       <Setter Property=""Background"" Value=""White""/>
       <Setter Property=""BorderBrush"" Value=""#E5E7EB""/>
       <Setter Property=""BorderThickness"" Value=""1""/>
       <Setter Property=""CornerRadius"" Value=""14""/>
       <Setter Property=""Padding"" Value=""11,4""/>
       <Setter Property=""Margin"" Value=""0,0,8,0""/>
+      <Style.Triggers>
+        <Trigger Property=""IsMouseOver"" Value=""True""><Setter Property=""BorderBrush"" Value=""#93C5FD""/></Trigger>
+      </Style.Triggers>
     </Style>
 
     <DataTemplate x:Key=""DriverCard"">

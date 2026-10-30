@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.7.5 - 30 Oct 2026
+- Fixed: 3.7.4 closed with an error as soon as it opened
+
 ## 3.7.4 - 30 Oct 2026
 - New: Click the counters above the list (updates, up to date, check with maker, not checked) to show only those drivers; click again or on the total to show all
 - Fixed: Bluetooth mice and keyboards made Microsoft's catalog stop answering, leaving the drivers after them unchecked

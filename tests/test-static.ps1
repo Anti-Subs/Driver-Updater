@@ -4,8 +4,29 @@ function Check($name, $cond) { if ($cond) { "  ok   $name" } else { "  FAIL $nam
 $app = Get-Content ../src/App.cs -Raw
 "Start-up"
 Check 'Main runs on an STA thread (WPF needs it)' ($app -match '\[STAThread\]\s*public static int Main\(')
+"Window markup rules"
+# WPF refuses markup where an element's direct content is split by a property element
+# (e.g. <Setter/> <Style.Triggers/> <Setter/>) - it compiles fine but crashes when the window opens.
+Add-Type -Path ../src/Xaml.cs -ErrorAction Stop
+function Split-Content($node) {
+    $bad = @()
+    $seenContent = $false; $seenPropAfter = $false
+    foreach ($c in $node.ChildNodes) {
+        if ($c.NodeType -ne 'Element') { continue }
+        if ($c.LocalName -like '*.*') { if ($seenContent) { $seenPropAfter = $true } }
+        else { if ($seenPropAfter) { $bad += $node.LocalName + ' > ' + $c.LocalName } ; $seenContent = $true }
+        $bad += Split-Content $c
+    }
+    $bad
+}
+foreach ($n in 'Main','Setup') {
+    $doc = [xml][DriverUpdater.Xaml]::$n
+    $bad = @(Split-Content $doc.DocumentElement)
+    Check "$n window: content isn't split by property elements" ($bad.Count -eq 0)
+    if ($bad.Count) { "      " + ($bad -join '; ') }
+}
 "Dark mode"
-Add-Type -Path ../src/Core.cs, ../src/Xaml.cs -ErrorAction Stop
+Add-Type -Path ../src/Core.cs -ErrorAction Stop
 [DriverUpdater.Theme]::Dark = $true
 foreach ($n in 'Main','Setup') {
     $x = [DriverUpdater.Theme]::Apply([DriverUpdater.Xaml]::$n)
