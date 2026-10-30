@@ -31,12 +31,12 @@ $kept = [System.Collections.Generic.Dictionary[string,string]]::new(); $kept['y'
 $r = SR 'y' 'Update' '5.0' 'Intel'; [DriverUpdater.ScanResult]::ApplyKeptTo($r, $null, $kept)
 Check 'declined before -> Kept' ($r.Kind -eq 'Kept')
 $it=[DriverUpdater.DriverItem]::new(); $it.Manufacturer='Intel'; $it.Installed='20.40.12849.0'; $r.Latest='20.43.12874.0'; $it.ApplyState('Kept',$r,$false)
-Check 'row text' ($it.TagText -eq 'Up to date - Windows prefers this version' -and $it.Size -like 'Version 20.43.12874.0 was offered*' -and $it.ButtonVisibility -eq 'Collapsed')
+Check 'row text' ($it.TagText -eq 'Up to date – Windows prefers this version' -and $it.Size -like 'Version 20.43.12874.0 was offered*' -and $it.ButtonVisibility -eq 'Collapsed')
 
 "Restart pending that never took effect"
 $L=[DriverUpdater.DriverList]::new(); $d=[DriverUpdater.DeviceInfo]::new(); $d.Key='k';$d.Name='k';$d.Version='1.0'; $L.Inventory.Add($d); $L.Reset('NotScanned')
 $s = SR 'k' 'Installed' '2.0' 'Microsoft Update Catalog'; $s.Installed='1.0'
-$null=$L.ImportSaved([DriverUpdater.ScanResult[]]@($s), $false); Check 'no restart yet -> restart to finish' ($L.ByKey['k'].TagText -eq 'Installed - restart to finish')
+$null=$L.ImportSaved([DriverUpdater.ScanResult[]]@($s), $false); Check 'no restart yet -> restart to finish' ($L.ByKey['k'].TagText -eq 'Installed – restart to finish')
 $s = SR 'k' 'Installed' '2.0' 'Microsoft Update Catalog'; $s.Installed='1.0'; $L.Reset('NotScanned')
 $null=$L.ImportSaved([DriverUpdater.ScanResult[]]@($s), $true); Check 'restarted, still old -> Windows kept it' ($L.ByKey['k'].State -eq 'Kept')
 

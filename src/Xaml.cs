@@ -90,6 +90,11 @@ namespace DriverUpdater
     </Style>
 
     <Style x:Key=""Chip"" TargetType=""Border"">
+      <Setter Property=""Cursor"" Value=""Hand""/>
+      <Setter Property=""ToolTip"" Value=""Show only these drivers (click again to show all)""/>
+      <Style.Triggers>
+        <Trigger Property=""IsMouseOver"" Value=""True""><Setter Property=""BorderBrush"" Value=""#93C5FD""/></Trigger>
+      </Style.Triggers>
       <Setter Property=""Background"" Value=""White""/>
       <Setter Property=""BorderBrush"" Value=""#E5E7EB""/>
       <Setter Property=""BorderThickness"" Value=""1""/>
@@ -288,7 +293,7 @@ namespace DriverUpdater
         <DockPanel Margin=""36,22,36,10"">
           <StackPanel DockPanel.Dock=""Right"" Orientation=""Horizontal"" VerticalAlignment=""Center"">
             <Button x:Name=""BtnScan"" Content=""Scan now"" Style=""{StaticResource PrimaryButton}"" Margin=""0,0,10,0""/>
-            <Button x:Name=""BtnUpdateAll"" Content=""Update All"" Style=""{StaticResource PrimaryButton}"" Visibility=""Collapsed""/>
+            <Button x:Name=""BtnUpdateAll"" Content=""Update all"" Style=""{StaticResource PrimaryButton}"" Visibility=""Collapsed""/>
           </StackPanel>
           <StackPanel VerticalAlignment=""Center"">
             <TextBlock FontSize=""24"" FontWeight=""SemiBold"" Foreground=""#111827"" TextTrimming=""CharacterEllipsis"">
@@ -371,7 +376,7 @@ namespace DriverUpdater
               <Button x:Name=""BtnDevMgr"" Content=""Device Manager"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
               <Button x:Name=""BtnOldUsb"" Content=""Remove old USB devices..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10"" ToolTip=""Clears USB devices Windows remembers but that aren't plugged in now""/>
               <Button x:Name=""BtnExport"" Content=""Save driver list..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
-              <Button x:Name=""BtnHwReport"" Content=""Save hardware report..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10"" ToolTip=""Your PC's maker, model and devices (no personal data) - share it to get more makers' driver catalogs added""/>
+              <Button x:Name=""BtnHwReport"" Content=""Save hardware report..."" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10"" ToolTip=""Your PC's maker, model and devices (no personal data) – share it to get more makers' driver catalogs added""/>
               <Button x:Name=""BtnLog"" Content=""Open log folder"" Style=""{StaticResource OutlineButton}"" Margin=""0,0,10,10""/>
             </WrapPanel>
             <TextBlock Text=""Manufacturer tools"" FontSize=""24"" FontWeight=""SemiBold"" Foreground=""#111827"" Margin=""0,18,0,0""/>

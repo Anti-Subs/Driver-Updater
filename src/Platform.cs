@@ -398,7 +398,7 @@ namespace DriverUpdater
             catch (Exception ex) { Log.Write("Could not save catalog cache: " + ex.Message); }
         }
 
-        int refusedInARow;
+        int refusedInARow, oddInARow;
         DateTime busyUntil = BusyUntil;
 
         /// <summary>
@@ -435,6 +435,12 @@ namespace DriverUpdater
             }
             catch (Exception ex) { Log.Write("Catalog request failed for '" + query + "': " + ex.Message); }
             var rows = html == null ? null : Catalog.Parse(html);
+            if (rows == null && html != null && !html.Contains("Too many search requests") && ++oddInARow < 3)
+            {
+                // an error page for this one search (not Microsoft slowing us down): treat it as "nothing found"
+                Log.Write("Catalog couldn't search for '" + query + "' - skipped.");
+                return new List<CatalogEntry>();
+            }
             if (rows == null)
             {
                 Log.Write("Catalog refused '" + query + "' - will try again at the end.");
@@ -448,7 +454,7 @@ namespace DriverUpdater
                 }
                 return null;
             }
-            refusedInARow = 0;
+            refusedInARow = 0; oddInARow = 0;
             cache[query] = rows; times[query] = DateTime.Now;
             return rows;
         }
@@ -458,7 +464,7 @@ namespace DriverUpdater
         {
             for (int s = seconds; s > 0 && !Cancelled(); s--)
             {
-                Status("Microsoft asked us to slow down - trying the remaining drivers in " + s + " s...");
+                Status("Microsoft asked us to slow down – trying the remaining drivers in " + s + " s...");
                 Thread.Sleep(1000);
             }
             Blocked = false; refusedInARow = 0; pace = 3000;
@@ -469,8 +475,9 @@ namespace DriverUpdater
 
         public CatalogEntry Find(DeviceInfo d, bool isArm, string osName, out bool checkedOk)
         {
-            checkedOk = false;
-            foreach (var q in Catalog.QueriesFor(d.HardwareIds))
+            var queries = Catalog.QueriesFor(d.HardwareIds);
+            checkedOk = queries.Count == 0;      // nothing worth searching for: answered (no Microsoft driver), not "busy"
+            foreach (var q in queries)
             {
                 var found = Search(q);
                 if (found == null) continue;

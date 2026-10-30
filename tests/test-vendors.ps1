@@ -76,7 +76,7 @@ function SR($k,$v,$src) { $r=[DriverUpdater.ScanResult]::new(); $r.Key=$k;$r.Nam
 [void]$L.AddResult((SR 'g' '32.0.101.9034' 'Intel'), $true)
 Check 'better result replaces, row not moved twice' ($L.TopCount -eq 1 -and $L.Rows[0].Key -eq 'g' -and $L.Rows[0].Source -like 'Official  |  Intel*')
 $L.Rows[0].ApplyState('Opened', (SR 'g' '32.0.101.9034' 'NVIDIA'), $false)
-Check 'opened state' ($L.Rows[0].TagText -eq 'NVIDIA installer opened - finish there')
+Check 'opened state' ($L.Rows[0].TagText -eq 'NVIDIA installer opened – finish there')
 ""; if ($fail) { "$fail FAILED" } else { 'ALL PASSED' }
 "Silent switches"
 Check 'intel graphics' ([DriverUpdater.VendorNet]::SilentSwitches('Intel','gfx_win_101.9150.exe') -eq '-s --overwrite --noExtras')
